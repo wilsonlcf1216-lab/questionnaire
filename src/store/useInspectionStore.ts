@@ -28,10 +28,10 @@ interface InspectionState {
   }) => void;
   setActiveSheet: (sheetName: string) => void;
   updateMeta: (field: keyof InspectionMeta, value: string) => void;
-  updateStatus: (itemId: string, status: InspectionItemResult["status"]) => void;
-  updateNotes: (itemId: string, notes: string) => void;
-  appendPhotos: (itemId: string, photos: InspectionPhoto[]) => void;
-  removePhoto: (itemId: string, photoId: string) => void;
+  updateStatus: (sourceKey: string, itemId: string, status: InspectionItemResult["status"]) => void;
+  updateNotes: (sourceKey: string, itemId: string, notes: string) => void;
+  appendPhotos: (sourceKey: string, itemId: string, photos: InspectionPhoto[]) => void;
+  removePhoto: (sourceKey: string, itemId: string, photoId: string) => void;
   hydrateDraft: (draft: InspectionDraft) => void;
   markSaved: (message: string) => void;
   clearSaveMessage: () => void;
@@ -40,11 +40,13 @@ interface InspectionState {
 
 function ensureResult(
   results: Record<string, InspectionItemResult>,
+  sourceKey: string,
   itemId: string,
 ): InspectionItemResult {
   return (
-    results[itemId] ?? {
+    results[sourceKey] ?? {
       itemId,
+      sourceKey,
       status: "",
       notes: "",
       photos: [],
@@ -83,49 +85,49 @@ export const useInspectionStore = create<InspectionState>((set, get) => ({
       },
       saveMessage: "",
     })),
-  updateStatus: (itemId, status) =>
+  updateStatus: (sourceKey, itemId, status) =>
     set((state) => ({
       results: {
         ...state.results,
-        [itemId]: {
-          ...ensureResult(state.results, itemId),
+        [sourceKey]: {
+          ...ensureResult(state.results, sourceKey, itemId),
           status,
           updatedAt: new Date().toISOString(),
         },
       },
       saveMessage: "",
     })),
-  updateNotes: (itemId, notes) =>
+  updateNotes: (sourceKey, itemId, notes) =>
     set((state) => ({
       results: {
         ...state.results,
-        [itemId]: {
-          ...ensureResult(state.results, itemId),
+        [sourceKey]: {
+          ...ensureResult(state.results, sourceKey, itemId),
           notes,
           updatedAt: new Date().toISOString(),
         },
       },
       saveMessage: "",
     })),
-  appendPhotos: (itemId, photos) =>
+  appendPhotos: (sourceKey, itemId, photos) =>
     set((state) => ({
       results: {
         ...state.results,
-        [itemId]: {
-          ...ensureResult(state.results, itemId),
-          photos: [...ensureResult(state.results, itemId).photos, ...photos],
+        [sourceKey]: {
+          ...ensureResult(state.results, sourceKey, itemId),
+          photos: [...ensureResult(state.results, sourceKey, itemId).photos, ...photos],
           updatedAt: new Date().toISOString(),
         },
       },
       saveMessage: "",
     })),
-  removePhoto: (itemId, photoId) =>
+  removePhoto: (sourceKey, itemId, photoId) =>
     set((state) => {
-      const current = ensureResult(state.results, itemId);
+      const current = ensureResult(state.results, sourceKey, itemId);
       return {
         results: {
           ...state.results,
-          [itemId]: {
+          [sourceKey]: {
             ...current,
             photos: current.photos.filter((photo) => photo.id !== photoId),
             updatedAt: new Date().toISOString(),

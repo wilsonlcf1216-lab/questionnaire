@@ -1,4 +1,5 @@
 import type { InspectionPhoto } from "@/types/checklist";
+import { generateId } from "@/utils/id";
 
 const MAX_DIMENSION = 1600;
 const JPEG_QUALITY = 0.86;
@@ -49,7 +50,7 @@ export async function preparePhoto(file: File): Promise<InspectionPhoto> {
   const resized = await resizeDataUrl(original, file.type);
 
   return {
-    id: crypto.randomUUID(),
+    id: generateId(),
     name: file.name,
     mimeType: resized.dataUrl.startsWith("data:image/png") ? "image/png" : "image/jpeg",
     dataUrl: resized.dataUrl,

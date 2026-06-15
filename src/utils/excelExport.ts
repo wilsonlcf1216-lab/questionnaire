@@ -108,18 +108,18 @@ function embedSheetPhotos(
   sheet: ChecklistSheet,
   results: Record<string, InspectionItemResult>,
 ) {
-  const itemsWithPhotos = sheet.items.filter((item) => (results[item.id]?.photos.length ?? 0) > 0);
+  const itemsWithPhotos = sheet.items.filter((item) => (results[item.sourceKey]?.photos.length ?? 0) > 0);
 
   if (itemsWithPhotos.length === 0) {
     return;
   }
 
-  const maxPhotos = Math.max(...itemsWithPhotos.map((item) => results[item.id]?.photos.length ?? 0));
+  const maxPhotos = Math.max(...itemsWithPhotos.map((item) => results[item.sourceKey]?.photos.length ?? 0));
   const startColumn = sheet.lastColumn + 1;
   ensurePhotoColumns(worksheet, startColumn, maxPhotos);
 
   for (const item of sheet.items) {
-    const result = results[item.id];
+    const result = results[item.sourceKey];
     const photos = result?.photos ?? [];
     worksheet.getCell(item.rowNumber, item.statusColumn).value = result?.status || "";
     worksheet.getCell(item.rowNumber, item.notesColumn).value = result?.notes || "";

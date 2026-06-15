@@ -11,6 +11,7 @@ const sheets: ChecklistSheet[] = [
     items: [
       {
         id: "OFF-01",
+        sourceKey: "Ward Office Checklist::OFF-01::Ceiling Panels",
         sheetName: "Ward Office Checklist",
         sheetLabel: "Ward Office",
         category: "Finishes",
@@ -24,6 +25,7 @@ const sheets: ChecklistSheet[] = [
       },
       {
         id: "OFF-02",
+        sourceKey: "Ward Office Checklist::OFF-02::Wall Paint",
         sheetName: "Ward Office Checklist",
         sheetLabel: "Ward Office",
         category: "Finishes",
@@ -44,6 +46,7 @@ describe("buildInspectionSummary", () => {
     const results: Record<string, InspectionItemResult> = {
       "OFF-01": {
         itemId: "OFF-01",
+        sourceKey: "Ward Office Checklist::OFF-01::Ceiling Panels",
         status: "Pass",
         notes: "",
         photos: [],
@@ -51,6 +54,7 @@ describe("buildInspectionSummary", () => {
       },
       "OFF-02": {
         itemId: "OFF-02",
+        sourceKey: "Ward Office Checklist::OFF-02::Wall Paint",
         status: "Fail",
         notes: "paint chip",
         photos: [],
@@ -58,7 +62,10 @@ describe("buildInspectionSummary", () => {
       },
     };
 
-    const summary = buildInspectionSummary(sheets, results);
+    const summary = buildInspectionSummary(sheets, {
+      "Ward Office Checklist::OFF-01::Ceiling Panels": results["OFF-01"],
+      "Ward Office Checklist::OFF-02::Wall Paint": results["OFF-02"],
+    });
 
     expect(summary.overall.total).toBe(2);
     expect(summary.overall.completed).toBe(2);

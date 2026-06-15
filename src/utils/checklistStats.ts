@@ -31,7 +31,7 @@ export function buildInspectionSummary(
     const sheetStats = createEmptyStats();
 
     for (const item of sheet.items) {
-      const result = results[item.id];
+      const result = results[item.sourceKey];
       sheetStats.total += 1;
       overall.total += 1;
 
