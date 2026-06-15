@@ -1,57 +1,43 @@
-# React + TypeScript + Vite
+# Hospital Ward Checklist
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+集中式 hospital ward pre-handover checklist web app。
 
-Currently, two official plugins are available:
+## 本地開發
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+```bash
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## 環境變數
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+複製 `.env.example` 成 `.env`，再填：
 
-export default tseslint.config({
-  extends: [
-    // other configs...
-    // Enable lint rules for React
-    reactX.configs['recommended-typescript'],
-    // Enable lint rules for React DOM
-    reactDom.configs.recommended,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
-```
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY`
+- `VITE_ADMIN_EMAILS`
+- `VITE_BASE_PATH`
+
+## Supabase 設定
+
+1. 開一個新 Supabase project
+2. 去 SQL Editor 執行 `supabase/schema.sql`
+3. 去 Authentication 開啟 Email OTP / Magic Link
+4. 去 GitHub repo secrets 加入：
+   - `VITE_SUPABASE_URL`
+   - `VITE_SUPABASE_ANON_KEY`
+   - `VITE_ADMIN_EMAILS`
+
+## GitHub Pages
+
+1. Push 到 `main`
+2. 去 repo `Settings -> Pages`
+3. Source 選 `GitHub Actions`
+4. workflow `Deploy To GitHub Pages` 會自動 build 同 deploy
+
+## 路由
+
+- `/` 公開填表頁
+- `/submitted` 提交成功頁
+- `/admin/login` admin magic link 登入
+- `/admin` 管理後台

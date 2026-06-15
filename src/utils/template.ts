@@ -1,6 +1,7 @@
 import ExcelJS from "exceljs";
 
 import type { ChecklistItem, ChecklistSheet, TemplatePayload } from "@/types/checklist";
+import { createSubmissionItemSourceKey } from "@/utils/submissionMapper";
 
 const TEMPLATE_URL = "/templates/ward-template.xlsx";
 
@@ -62,6 +63,7 @@ function createItem(
 
   return {
     id,
+    sourceKey: createSubmissionItemSourceKey(sheetName, id, asString(row.getCell(3).value)),
     sheetName,
     sheetLabel,
     category: asString(row.getCell(2).value),

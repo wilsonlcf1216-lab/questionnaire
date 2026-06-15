@@ -6,10 +6,10 @@ import { CHECKLIST_STATUSES, type ChecklistItem, type InspectionItemResult } fro
 interface ItemCardProps {
   item: ChecklistItem;
   result?: InspectionItemResult;
-  onStatusChange: (itemId: string, status: InspectionItemResult["status"]) => void;
-  onNotesChange: (itemId: string, notes: string) => void;
-  onAddPhotos: (itemId: string, files: FileList | null) => void;
-  onRemovePhoto: (itemId: string, photoId: string) => void;
+  onStatusChange: (sourceKey: string, itemId: string, status: InspectionItemResult["status"]) => void;
+  onNotesChange: (sourceKey: string, itemId: string, notes: string) => void;
+  onAddPhotos: (sourceKey: string, itemId: string, files: FileList | null) => void;
+  onRemovePhoto: (sourceKey: string, itemId: string, photoId: string) => void;
 }
 
 function getStatusTone(status: InspectionItemResult["status"]) {
@@ -69,7 +69,7 @@ export function ItemCard({
             <button
               key={option}
               type="button"
-              onClick={() => onStatusChange(item.id, option)}
+              onClick={() => onStatusChange(item.sourceKey, item.id, option)}
               className={`rounded-2xl border px-4 py-3 text-sm font-medium transition ${
                 status === option
                   ? "border-slate-950 bg-slate-950 text-white"
@@ -91,7 +91,7 @@ export function ItemCard({
           <textarea
             rows={7}
             value={result?.notes ?? ""}
-            onChange={(event) => onNotesChange(item.id, event.target.value)}
+            onChange={(event) => onNotesChange(item.sourceKey, item.id, event.target.value)}
             placeholder="例如：paint chip near door frame / glass scratch on lower panel / closer not aligned..."
             className="w-full rounded-[20px] border border-slate-200 bg-white px-4 py-3 text-sm leading-7 text-slate-900 outline-none transition focus:border-teal-500"
           />
@@ -103,8 +103,8 @@ export function ItemCard({
           </p>
           <PhotoPicker
             photos={result?.photos ?? []}
-            onAdd={(files) => onAddPhotos(item.id, files)}
-            onRemove={(photoId) => onRemovePhoto(item.id, photoId)}
+            onAdd={(files) => onAddPhotos(item.sourceKey, item.id, files)}
+            onRemove={(photoId) => onRemovePhoto(item.sourceKey, item.id, photoId)}
           />
         </div>
       </div>

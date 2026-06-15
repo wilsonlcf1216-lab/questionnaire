@@ -1,32 +1,44 @@
 ## 1. 架構設計
 ```mermaid
 flowchart LR
-    A["React 前端介面"] --> B["表單狀態管理"]
-    B --> C["瀏覽器本地草稿儲存"]
-    B --> D["Excel Template 解析層"]
-    B --> E["圖片處理模組"]
-    D --> F["Excel 匯出引擎"]
-    E --> F
-    F --> G["下載帶圖片 Excel 檔案"]
+    A["GitHub Pages 前端"] --> B["React 表單與 Admin UI"]
+    B --> C["Supabase Auth"]
+    B --> D["Supabase Postgres"]
+    B --> E["Supabase Storage"]
+    B --> F["Excel Template 解析層"]
+    D --> G["Submission 列表 / 詳情"]
+    E --> G
+    G --> H["CSV / Excel 匯出做 consolidation"]
 ```
 
 ## 2. 技術說明
 - 前端：React 18 + TypeScript + Vite
 - UI：Tailwind CSS 3 + 自訂 component 樣式
-- Excel 處理：`exceljs` 負責讀寫 workbook、更新工作表內容、嵌入圖片
-- 檔案處理：瀏覽器 `File API` + `Blob` + `URL.createObjectURL`
-- 狀態管理：React Context + reducer，或者輕量 `zustand`
-- 草稿儲存：`localStorage` 保存表單 JSON；圖片以壓縮後 data URL 或 IndexedDB 儲存
+- BaaS：Supabase（Postgres + Auth + Storage）
+- Excel / 匯出：前端保留 template parser；admin 匯出用 `exceljs` / CSV
+- 檔案處理：瀏覽器 `File API` + Supabase Storage upload
+- 狀態管理：`zustand`
+- 草稿儲存：瀏覽器 IndexedDB 作臨時草稿；正式資料以 Supabase 為主
 - 初始化工具：Vite
-- 後端：None，首版採用純前端本地處理，避免部署複雜度
+- 部署：GitHub Pages 承載前端，GitHub Actions 自動 build / deploy
+- 後端：無自建 server，首版用 Supabase 代替傳統後端
 
 ## 3. 路由定義
 | 路由 | 用途 |
 |-------|---------|
-| `/` | 主工作台，包含基本資料、區域導覽、檢查項目列表 |
-| `/export` | 匯出摘要與下載結果頁 |
+| `/` | 公開填表頁，包含基本資料、區域導覽、檢查項目列表 |
+| `/submitted` | 提交成功頁 |
+| `/admin` | 管理者後台，顯示 submissions 列表、詳情及匯出 |
+| `/admin/login` | Email magic link 登入入口 |
 
-## 4. 核心資料結構
+## 4. API / 資料流程
+### 4.1 前端與 Supabase 互動
+- 公開填表頁提交時先建立 `submissions` 記錄，再批次寫入 `submission_items`。
+- 每個 item 相片上傳至 `submission-photos` storage bucket，成功後將 public path / signed path 記錄到 `submission_item_photos`。
+- admin 以 Supabase Auth email magic link 登入，登入後讀取 submission 列表及詳細資料。
+- 匯出 consolidation 時，前端從 database 拉取資料並整理成 CSV / Excel。
+
+## 5. 核心資料結構
 ### 4.1 TypeScript 資料模型
 ```ts
 type ChecklistStatus = 'Pass' | 'Fail' | 'Pending' | 'N/A';
@@ -74,32 +86,32 @@ interface InspectionDraft {
 }
 ```
 
-### 4.2 匯出策略
-- 以原始 Excel template 作為 base workbook，保留原本 sheet 名稱、summary 公式或布局。
-- 將每個 item 嘅 `status` 寫回原本 Status 欄，`notes` 寫回 Notes / Defect Details 欄。
-- 如需要新增 metadata，可於 workbook 開頭或指定 summary 區域加入 inspection date、inspector、ward name。
-- 圖片會嵌入對應 checklist sheet 右側新欄位或額外 `Photo Evidence` 區塊，並同 item row 對齊。
-- 若單一 item 有多張相，可垂直堆疊或建立多格 image anchor，避免覆蓋原欄位內容。
+### 5.2 Supabase 資料表
+- `admin_users`：可登入後台嘅管理者名單（可選，用 RLS 限制 email）。
+- `submissions`：一份 checklist 提交嘅主表，包含 ward、inspector、inspection_date、handover_batch、remarks、submitted_at。
+- `submission_items`：每個 item 嘅 status、notes、sheet_name、item_id。
+- `submission_item_photos`：每張相片對應 item、storage path、public url、排序。
 
-## 5. 模組拆分
+## 6. 模組拆分
 | 模組 | 職責 |
 |------|------|
 | `template-parser` | 讀取內建 checklist template，轉成前端可渲染嘅 sheet / item 結構 |
-| `inspection-store` | 管理 metadata、item result、進度統計、草稿保存 |
-| `photo-manager` | 處理相片上載、壓縮、縮圖、刪除、手機相機輸入 |
-| `excel-exporter` | 使用 `exceljs` 生成輸出 workbook，寫入資料與圖片 |
-| `dashboard-ui` | 呈現摘要、篩選器、區域切換、狀態 badge |
-| `checklist-item-card` | 呈現單一 item 表單、圖片區、驗證訊息 |
+| `inspection-store` | 管理 metadata、item result、進度統計、提交流程、草稿保存 |
+| `photo-manager` | 處理相片壓縮、縮圖、刪除、提交前上傳準備 |
+| `supabase-client` | 包裝 auth、database、storage 互動 |
+| `submission-service` | 負責建立 submission、寫 item、上傳圖片 |
+| `admin-dashboard` | 顯示 submission 列表、詳情、filter、匯出 |
+| `github-pages-workflow` | 自動 build 並 deploy 到 GitHub Pages |
 
-## 6. 介面與驗證規則
-- `Save`：保存到瀏覽器本地草稿，不即時下載檔案。
-- `Export Excel`：先驗證必填 metadata，再生成 `.xlsx`。
+## 7. 介面與驗證規則
+- `Submit`：先驗證必填 metadata，再上傳 submission。
+- 後台只接受已登入管理者進入。
 - 狀態欄必須只接受 `Pass / Fail / Pending / N/A`。
-- 圖片接受 `jpg`、`jpeg`、`png`、`webp`；匯出前會轉成 `png` 或保持原格式視乎 `exceljs` 支援。
-- 單張圖片需要做尺寸壓縮，避免導致 Excel 檔案過大。
+- 圖片接受 `jpg`、`jpeg`、`png`、`webp`；上傳前會壓縮。
+- GitHub Pages build 以 `VITE_SUPABASE_URL`、`VITE_SUPABASE_ANON_KEY`、`VITE_BASE_PATH` 注入。
 
-## 7. 風險與處理
-- 圖片過多導致 Excel 體積過大：加入圖片壓縮、限制單張大小、提示使用者。
-- 瀏覽器 localStorage 容量不足：相片資料優先用 IndexedDB，本地只儲 metadata 與索引。
-- 原 Excel 某些格式或 merged cells 較複雜：匯出時盡量保持 template 原樣，只針對資料欄位與新增圖片區做最小修改。
-- 手機拍照權限受瀏覽器限制：提供檔案上載 fallback，避免功能完全依賴 camera API。
+## 8. 風險與處理
+- GitHub Pages 只係靜態 hosting：資料收集完全依賴 Supabase，不能只靠 GitHub repo。
+- 相片過多會增加 storage / bandwidth：加入圖片壓縮、限制單張大小。
+- 前端直接連 Supabase：必須正確設定 RLS，避免公開讀取 admin data。
+- GitHub Pages repo path 問題：build 時使用 `VITE_BASE_PATH` 處理路徑前綴。

@@ -1,17 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Filter, LoaderCircle, RefreshCcw } from "lucide-react";
+import { CloudCog, Filter, LoaderCircle, RefreshCcw } from "lucide-react";
 
 import { AppHeader } from "@/components/AppHeader";
 import { ItemCard } from "@/components/ItemCard";
 import { MetaFormCard } from "@/components/MetaFormCard";
 import { SectionNav } from "@/components/SectionNav";
 import { SummaryPanel } from "@/components/SummaryPanel";
+import { submitInspection } from "@/services/submissionService";
 import { useInspectionStore } from "@/store/useInspectionStore";
 import type { ChecklistStatus, InspectionDraft } from "@/types/checklist";
 import { buildInspectionSummary } from "@/utils/checklistStats";
-import { exportInspectionWorkbook } from "@/utils/excelExport";
-import { createExportFilename, downloadBlob } from "@/utils/file";
+import { isSupabaseConfigured } from "@/utils/env";
 import { preparePhoto } from "@/utils/image";
 import { clearDraftFromStorage, loadDraftFromStorage, saveDraftToStorage } from "@/utils/storage";
 import { loadTemplateWorkbook } from "@/utils/template";
@@ -28,7 +28,7 @@ export default function Home() {
   const navigate = useNavigate();
   const [statusFilter, setStatusFilter] = useState<FilterValue>("All");
   const [isSaving, setIsSaving] = useState(false);
-  const [isExporting, setIsExporting] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [actionError, setActionError] = useState("");
 
   const {
@@ -91,7 +91,7 @@ export default function Home() {
         return true;
       }
 
-      const status = results[item.id]?.status ?? "";
+      const status = results[item.sourceKey]?.status ?? "";
       if (statusFilter === "Unfilled") {
         return !status;
       }
@@ -119,54 +119,51 @@ export default function Home() {
     }
   }
 
-  async function handleAddPhotos(itemId: string, files: FileList | null) {
+  async function handleAddPhotos(sourceKey: string, itemId: string, files: FileList | null) {
     if (!files?.length) {
       return;
     }
 
     try {
       const prepared = await Promise.all(Array.from(files).map((file) => preparePhoto(file)));
-      appendPhotos(itemId, prepared);
+      appendPhotos(sourceKey, itemId, prepared);
       setActionError("");
     } catch (photoError) {
       setActionError(photoError instanceof Error ? photoError.message : "處理相片失敗");
     }
   }
 
-  async function handleExport() {
+  async function handleSubmit() {
     if (!templateBuffer) {
       setActionError("Template 尚未載入完成");
       return;
     }
 
     if (!isMetaValid(meta)) {
-      setActionError("請先填寫 Ward、Inspector 同 Inspection Date，之後先可以匯出 Excel");
+      setActionError("請先填寫 Ward、Inspector 同 Inspection Date，之後先可以提交");
       return;
     }
 
     try {
-      setIsExporting(true);
-      const blob = await exportInspectionWorkbook({
-        templateBuffer,
+      setIsSubmitting(true);
+      const response = await submitInspection({
+        meta,
         sheets,
         results,
-        meta,
       });
-
-      const filename = createExportFilename(meta.wardName, meta.inspectionDate);
-      downloadBlob(blob, filename);
-      navigate("/export", {
+      await clearDraftFromStorage();
+      clearDraftData();
+      navigate("/submitted", {
         state: {
-          fileName: filename,
-          summary,
-          wardName: meta.wardName,
+          submission: response.submission,
+          mode: response.mode,
         },
       });
       setActionError("");
-    } catch (exportError) {
-      setActionError(exportError instanceof Error ? exportError.message : "匯出 Excel 失敗");
+    } catch (submitError) {
+      setActionError(submitError instanceof Error ? submitError.message : "提交失敗");
     } finally {
-      setIsExporting(false);
+      setIsSubmitting(false);
     }
   }
 
@@ -210,10 +207,22 @@ export default function Home() {
           templateName={templateName}
           saveMessage={saveMessage}
           onSave={handleSave}
-          onExport={handleExport}
+          onSubmit={handleSubmit}
           isSaving={isSaving}
-          isExporting={isExporting}
+          isSubmitting={isSubmitting}
         />
+
+        {!isSupabaseConfigured() ? (
+          <div className="rounded-[22px] border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800">
+            <div className="flex items-start gap-3">
+              <CloudCog className="mt-0.5 h-4 w-4 shrink-0" />
+              <div>
+                目前係 demo mode。要正式集中收數據，請之後喺 GitHub Pages / Vite 環境變數加入
+                `VITE_SUPABASE_URL` 同 `VITE_SUPABASE_ANON_KEY`。
+              </div>
+            </div>
+          </div>
+        ) : null}
 
         {actionError ? (
           <div className="rounded-[20px] border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700">
@@ -277,9 +286,9 @@ export default function Home() {
             <section className="space-y-5">
               {filteredItems.map((item) => (
                 <ItemCard
-                  key={item.id}
+                  key={item.sourceKey}
                   item={item}
-                  result={results[item.id]}
+                  result={results[item.sourceKey]}
                   onStatusChange={updateStatus}
                   onNotesChange={updateNotes}
                   onAddPhotos={handleAddPhotos}

@@ -1,21 +1,22 @@
-import { Camera, Download, Save, ShieldCheck } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Send, Save, ShieldCheck } from "lucide-react";
 
 interface AppHeaderProps {
   templateName: string;
   saveMessage: string;
   onSave: () => void;
-  onExport: () => void;
+  onSubmit: () => void;
   isSaving: boolean;
-  isExporting: boolean;
+  isSubmitting: boolean;
 }
 
 export function AppHeader({
   templateName,
   saveMessage,
   onSave,
-  onExport,
+  onSubmit,
   isSaving,
-  isExporting,
+  isSubmitting,
 }: AppHeaderProps) {
   return (
     <header className="relative overflow-hidden rounded-[28px] border border-slate-200/70 bg-white/90 p-6 shadow-[0_30px_80px_rgba(15,23,42,0.08)] backdrop-blur">
@@ -46,6 +47,12 @@ export function AppHeader({
         </div>
 
         <div className="flex flex-wrap gap-3">
+          <Link
+            to="/admin"
+            className="inline-flex items-center justify-center gap-2 rounded-full border border-slate-300 bg-white px-5 py-3 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
+          >
+            Admin 後台
+          </Link>
           <button
             type="button"
             onClick={onSave}
@@ -57,12 +64,12 @@ export function AppHeader({
           </button>
           <button
             type="button"
-            onClick={onExport}
-            disabled={isExporting}
+            onClick={onSubmit}
+            disabled={isSubmitting}
             className="inline-flex items-center justify-center gap-2 rounded-full bg-slate-950 px-5 py-3 text-sm font-medium text-white transition hover:bg-teal-900 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {isExporting ? <Camera className="h-4 w-4 animate-pulse" /> : <Download className="h-4 w-4" />}
-            {isExporting ? "產生 Excel 中..." : "Export Excel"}
+            <Send className={`h-4 w-4 ${isSubmitting ? "animate-pulse" : ""}`} />
+            {isSubmitting ? "提交中..." : "Submit 到後台"}
           </button>
         </div>
       </div>

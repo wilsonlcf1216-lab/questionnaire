@@ -2,6 +2,7 @@ export type ChecklistStatus = "Pass" | "Fail" | "Pending" | "N/A";
 
 export interface ChecklistItem {
   id: string;
+  sourceKey: string;
   sheetName: string;
   sheetLabel: string;
   category: string;
@@ -33,6 +34,7 @@ export interface InspectionPhoto {
 
 export interface InspectionItemResult {
   itemId: string;
+  sourceKey: string;
   status: ChecklistStatus | "";
   notes: string;
   photos: InspectionPhoto[];
@@ -52,6 +54,47 @@ export interface InspectionDraft {
   meta: InspectionMeta;
   results: Record<string, InspectionItemResult>;
   savedAt: string;
+}
+
+export interface SubmissionRecord {
+  id: string;
+  wardName: string;
+  inspectorName: string;
+  inspectionDate: string;
+  handoverBatch: string;
+  remarks: string;
+  submittedAt: string;
+  totalItems: number;
+  passCount: number;
+  failCount: number;
+  pendingCount: number;
+  naCount: number;
+}
+
+export interface SubmissionItemPhotoRecord {
+  id: string;
+  submissionItemId: string;
+  photoUrl: string;
+  fileName: string;
+  storagePath: string;
+  position: number;
+}
+
+export interface SubmissionItemRecord {
+  id: string;
+  submissionId: string;
+  itemId: string;
+  sheetName: string;
+  category: string;
+  element: string;
+  targetLocation: string;
+  status: ChecklistStatus | "";
+  notes: string;
+  photos: SubmissionItemPhotoRecord[];
+}
+
+export interface SubmissionDetail extends SubmissionRecord {
+  items: SubmissionItemRecord[];
 }
 
 export interface TemplatePayload {
