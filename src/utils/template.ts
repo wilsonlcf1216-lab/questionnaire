@@ -3,7 +3,7 @@ import ExcelJS from "exceljs";
 import type { ChecklistItem, ChecklistSheet, TemplatePayload } from "@/types/checklist";
 import { createSubmissionItemSourceKey } from "@/utils/submissionMapper";
 
-const TEMPLATE_URL = "/templates/ward-template.xlsx";
+const TEMPLATE_URL = `${import.meta.env.BASE_URL}templates/ward-template.xlsx`;
 
 function asString(value: ExcelJS.CellValue | undefined): string {
   if (value === null || value === undefined) {
