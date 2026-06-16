@@ -100,7 +100,13 @@ export async function submitInspection(params: {
     .single();
 
   if (submissionResponse.error || !submissionResponse.data) {
-    throw new Error("提交 submission 失敗，請檢查 Supabase table 設定");
+    const error = submissionResponse.error;
+    const detail = error
+      ? [error.message, error.details, error.hint, error.code].filter(Boolean).join(" / ")
+      : "";
+    throw new Error(
+      `提交 submission 失敗：${detail || "請檢查 Supabase table / RLS 設定，並確認已在 SQL Editor 執行 schema.sql"}`,
+    );
   }
 
   const submissionId = submissionResponse.data.id as string;
@@ -111,7 +117,9 @@ export async function submitInspection(params: {
     .select("id, source_key");
 
   if (itemResponse.error || !itemResponse.data) {
-    throw new Error("寫入 item 資料失敗");
+    const error = itemResponse.error;
+    const detail = error ? [error.message, error.details, error.hint, error.code].filter(Boolean).join(" / ") : "";
+    throw new Error(`寫入 item 資料失敗：${detail || "請檢查 submission_items table / RLS"}`);
   }
 
   const itemIdMap = itemResponse.data.reduce<Record<string, string>>((accumulator, row) => {
@@ -134,7 +142,9 @@ export async function submitInspection(params: {
   if (photoRows.length > 0) {
     const photoResponse = await supabase.from("submission_item_photos").insert(photoRows);
     if (photoResponse.error) {
-      throw new Error("相片資料索引寫入失敗");
+      const error = photoResponse.error;
+      const detail = [error.message, error.details, error.hint, error.code].filter(Boolean).join(" / ");
+      throw new Error(`相片資料索引寫入失敗：${detail || "請檢查 submission_item_photos table / RLS"}`);
     }
   }
 
