@@ -23,6 +23,7 @@ export default function AdminPage() {
   const [detail, setDetail] = useState<SubmissionDetail | null>(null);
   const [search, setSearch] = useState("");
   const [isExportingZip, setIsExportingZip] = useState(false);
+  const [isExportingFailZip, setIsExportingFailZip] = useState(false);
 
   async function refreshSubmissions() {
     setLoading(true);
@@ -89,6 +90,25 @@ export default function AdminPage() {
     }
   }
 
+  async function handleExportFailZip() {
+    if (filteredSubmissions.length === 0) {
+      return;
+    }
+
+    try {
+      setIsExportingFailZip(true);
+      const details = (
+        await Promise.all(filteredSubmissions.map((submission) => fetchSubmissionDetail(submission.id)))
+      ).filter((submissionDetail): submissionDetail is SubmissionDetail => Boolean(submissionDetail));
+      await exportSubmissionPhotosZip(details, { failOnly: true });
+      setError("");
+    } catch (exportError) {
+      setError(exportError instanceof Error ? exportError.message : "未能下載 Fail item 相片 ZIP");
+    } finally {
+      setIsExportingFailZip(false);
+    }
+  }
+
   const filteredSubmissions = useMemo(
     () =>
       submissions.filter((submission) => {
@@ -151,6 +171,15 @@ export default function AdminPage() {
               >
                 {isExportingZip ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
                 {isExportingZip ? "整理全部相片中..." : "Download 全部 submission 相"}
+              </button>
+              <button
+                type="button"
+                onClick={handleExportFailZip}
+                disabled={isExportingFailZip || filteredSubmissions.length === 0}
+                className="inline-flex items-center gap-2 rounded-full border border-rose-300 bg-rose-50 px-5 py-3 text-sm font-medium text-rose-700 transition hover:border-rose-400 hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isExportingFailZip ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                {isExportingFailZip ? "整理 Fail 相片中..." : "只下載 Fail item 相片"}
               </button>
               {isSupabaseConfigured() ? (
                 <button

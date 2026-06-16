@@ -184,7 +184,10 @@ export async function exportSubmissionZip(detail: SubmissionDetail) {
   downloadBlob(zipBlob, `submission-${detail.id}.zip`);
 }
 
-export async function exportSubmissionPhotosZip(details: SubmissionDetail[]) {
+export async function exportSubmissionPhotosZip(
+  details: SubmissionDetail[],
+  options?: { failOnly?: boolean },
+) {
   const zip = new JSZip();
   const csvRows: Array<Array<string | number>> = [[
     "submission_id",
@@ -203,6 +206,10 @@ export async function exportSubmissionPhotosZip(details: SubmissionDetail[]) {
 
   for (const detail of details) {
     for (const item of detail.items) {
+      if (options?.failOnly && item.status !== "Fail") {
+        continue;
+      }
+
       for (const [index, photo] of item.photos.entries()) {
         const blob = await fetchPhotoBlob(photo.photoUrl);
         const extension = inferFileExtension(blob.type, photo.fileName);
@@ -235,5 +242,6 @@ export async function exportSubmissionPhotosZip(details: SubmissionDetail[]) {
 
   zip.file("photo-index.csv", buildCsv(csvRows));
   const zipBlob = await zip.generateAsync({ type: "blob" });
-  downloadBlob(zipBlob, `all-submission-photos-${new Date().toISOString().replace(/[:.]/g, "-")}.zip`);
+  const prefix = options?.failOnly ? "fail-submission-photos" : "all-submission-photos";
+  downloadBlob(zipBlob, `${prefix}-${new Date().toISOString().replace(/[:.]/g, "-")}.zip`);
 }
