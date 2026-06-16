@@ -10,7 +10,7 @@ import {
   signOutAdmin,
 } from "@/services/adminService";
 import type { SubmissionDetail, SubmissionRecord } from "@/types/checklist";
-import { exportSubmissionDetailCsv, exportSubmissionListCsv, exportSubmissionZip } from "@/utils/adminExport";
+import { exportSubmissionDetailCsv, exportSubmissionListCsv, exportSubmissionPhotosZip } from "@/utils/adminExport";
 import { isSupabaseConfigured } from "@/utils/env";
 
 export default function AdminPage() {
@@ -71,16 +71,19 @@ export default function AdminPage() {
   }
 
   async function handleExportZip() {
-    if (!detail) {
+    if (filteredSubmissions.length === 0) {
       return;
     }
 
     try {
       setIsExportingZip(true);
-      await exportSubmissionZip(detail);
+      const details = (
+        await Promise.all(filteredSubmissions.map((submission) => fetchSubmissionDetail(submission.id)))
+      ).filter((submissionDetail): submissionDetail is SubmissionDetail => Boolean(submissionDetail));
+      await exportSubmissionPhotosZip(details);
       setError("");
     } catch (exportError) {
-      setError(exportError instanceof Error ? exportError.message : "未能下載 submission ZIP");
+      setError(exportError instanceof Error ? exportError.message : "未能下載 submission 相片 ZIP");
     } finally {
       setIsExportingZip(false);
     }
@@ -139,6 +142,15 @@ export default function AdminPage() {
               >
                 <Download className="h-4 w-4" />
                 Export 全部 CSV
+              </button>
+              <button
+                type="button"
+                onClick={handleExportZip}
+                disabled={isExportingZip || filteredSubmissions.length === 0}
+                className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-5 py-3 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isExportingZip ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                {isExportingZip ? "整理全部相片中..." : "Download 全部 submission 相"}
               </button>
               {isSupabaseConfigured() ? (
                 <button
@@ -221,25 +233,14 @@ export default function AdminPage() {
                       {detail.inspectorName} · {detail.inspectionDate} · {detail.submittedAt}
                     </p>
                   </div>
-                  <div className="flex flex-wrap gap-3">
-                    <button
-                      type="button"
-                      onClick={() => exportSubmissionDetailCsv(detail)}
-                      className="inline-flex items-center gap-2 rounded-full bg-slate-950 px-5 py-3 text-sm font-medium text-white transition hover:bg-teal-900"
-                    >
-                      <Table2 className="h-4 w-4" />
-                      Export 呢份 CSV
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleExportZip}
-                      disabled={isExportingZip}
-                      className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-5 py-3 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      {isExportingZip ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-                      {isExportingZip ? "整理 ZIP 中..." : "Download submission ZIP"}
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => exportSubmissionDetailCsv(detail)}
+                    className="inline-flex items-center gap-2 rounded-full bg-slate-950 px-5 py-3 text-sm font-medium text-white transition hover:bg-teal-900"
+                  >
+                    <Table2 className="h-4 w-4" />
+                    Export 呢份 CSV
+                  </button>
                 </div>
 
                 <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">

@@ -183,3 +183,57 @@ export async function exportSubmissionZip(detail: SubmissionDetail) {
   const zipBlob = await zip.generateAsync({ type: "blob" });
   downloadBlob(zipBlob, `submission-${detail.id}.zip`);
 }
+
+export async function exportSubmissionPhotosZip(details: SubmissionDetail[]) {
+  const zip = new JSZip();
+  const csvRows: Array<Array<string | number>> = [[
+    "submission_id",
+    "submission_item_id",
+    "item_id",
+    "sheet_name",
+    "category",
+    "element",
+    "target_location",
+    "status",
+    "photo_index",
+    "zip_file_name",
+    "storage_path",
+    "photo_url",
+  ]];
+
+  for (const detail of details) {
+    for (const item of detail.items) {
+      for (const [index, photo] of item.photos.entries()) {
+        const blob = await fetchPhotoBlob(photo.photoUrl);
+        const extension = inferFileExtension(blob.type, photo.fileName);
+        const fileName = [
+          sanitizeStorageSegment(detail.id, "submission"),
+          sanitizeStorageSegment(item.sheetName, "sheet"),
+          sanitizeStorageSegment(item.itemId, "item"),
+          sanitizeStorageSegment(item.category, "uncategorized"),
+          `${index + 1}.${extension}`,
+        ].join("__");
+
+        zip.file(fileName, blob);
+        csvRows.push([
+          detail.id,
+          item.id,
+          item.itemId,
+          item.sheetName,
+          item.category,
+          item.element,
+          item.targetLocation,
+          item.status,
+          index + 1,
+          fileName,
+          photo.storagePath,
+          photo.photoUrl,
+        ]);
+      }
+    }
+  }
+
+  zip.file("photo-index.csv", buildCsv(csvRows));
+  const zipBlob = await zip.generateAsync({ type: "blob" });
+  downloadBlob(zipBlob, `all-submission-photos-${new Date().toISOString().replace(/[:.]/g, "-")}.zip`);
+}
