@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { CloudCog, Filter, LoaderCircle, RefreshCcw } from "lucide-react";
+import { Filter, LoaderCircle, RefreshCcw } from "lucide-react";
 
 import { AppHeader } from "@/components/AppHeader";
 import { ItemCard } from "@/components/ItemCard";
@@ -11,14 +11,13 @@ import { submitInspection } from "@/services/submissionService";
 import { useInspectionStore } from "@/store/useInspectionStore";
 import type { ChecklistStatus, InspectionDraft } from "@/types/checklist";
 import { buildInspectionSummary } from "@/utils/checklistStats";
-import { isSupabaseConfigured } from "@/utils/env";
 import { preparePhoto } from "@/utils/image";
 import { clearDraftFromStorage, loadDraftFromStorage, saveDraftToStorage } from "@/utils/storage";
 import { loadTemplateWorkbook } from "@/utils/template";
 
 type FilterValue = "All" | "Unfilled" | ChecklistStatus;
 
-const FILTER_OPTIONS: FilterValue[] = ["All", "Pass", "Fail", "Pending", "N/A", "Unfilled"];
+const FILTER_OPTIONS: FilterValue[] = ["All", "Pass", "Fail", "N/A", "Unfilled"];
 
 function isMetaValid(meta: { wardName: string; inspectorName: string; inspectionDate: string }) {
   return Boolean(meta.wardName && meta.inspectorName && meta.inspectionDate);
@@ -201,8 +200,8 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f3f3ef] px-4 py-6 text-slate-900 sm:px-6 lg:px-8">
-      <div className="mx-auto flex max-w-[1640px] flex-col gap-6">
+    <div className="min-h-screen bg-[#eef2ec] px-4 py-6 text-slate-900 sm:px-6 lg:px-8">
+      <div className="mx-auto flex max-w-[1680px] flex-col gap-6">
         <AppHeader
           templateName={templateName}
           saveMessage={saveMessage}
@@ -212,26 +211,14 @@ export default function Home() {
           isSubmitting={isSubmitting}
         />
 
-        {!isSupabaseConfigured() ? (
-          <div className="rounded-[22px] border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800">
-            <div className="flex items-start gap-3">
-              <CloudCog className="mt-0.5 h-4 w-4 shrink-0" />
-              <div>
-                目前係 demo mode。要正式集中收數據，請之後喺 GitHub Pages / Vite 環境變數加入
-                `VITE_SUPABASE_URL` 同 `VITE_SUPABASE_ANON_KEY`。
-              </div>
-            </div>
-          </div>
-        ) : null}
-
         {actionError ? (
           <div className="rounded-[20px] border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700">
             {actionError}
           </div>
         ) : null}
 
-        <div className="grid gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
-          <div className="space-y-6">
+        <div className="grid gap-6 xl:grid-cols-[370px_minmax(0,1fr)]">
+          <div className="space-y-6 xl:sticky xl:top-6 xl:self-start">
             <MetaFormCard meta={meta} onChange={updateMeta} />
             <SectionNav
               sheets={sheets}
@@ -243,16 +230,36 @@ export default function Home() {
           </div>
 
           <main className="space-y-6">
-            <section className="rounded-[24px] border border-slate-200/80 bg-white/90 p-5 shadow-sm backdrop-blur">
-              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.24em] text-slate-400">Active Zone</p>
-                  <h2 className="font-display text-3xl text-slate-900">{activeSheet?.label}</h2>
-                  <p className="mt-2 text-sm text-slate-500">
-                    {activeSheet?.items.length ?? 0} items in this section
-                  </p>
-                </div>
+            <section className="overflow-hidden rounded-[28px] border border-slate-200/80 bg-white/92 shadow-sm backdrop-blur">
+              <div className="border-b border-slate-200/80 bg-[linear-gradient(135deg,rgba(255,255,255,0.98),rgba(240,253,250,0.88))] px-5 py-5 sm:px-6">
+                <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.24em] text-slate-400">Active Zone</p>
+                    <h2 className="font-display text-3xl text-slate-950 sm:text-4xl">{activeSheet?.label}</h2>
+                    <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
+                      每個 item 會優先顯示檢查 instruction，現場只需要揀 `PASS`、`FAIL` 或 `N/A`，
+                      再補最少量 notes 同 photo evidence。
+                    </p>
+                  </div>
 
+                  <div className="grid gap-3 sm:grid-cols-3 xl:min-w-[360px]">
+                    <div className="rounded-[22px] border border-slate-200 bg-white px-4 py-4">
+                      <p className="text-[11px] uppercase tracking-[0.24em] text-slate-400">Items</p>
+                      <p className="mt-2 text-3xl text-slate-950">{activeSheet?.items.length ?? 0}</p>
+                    </div>
+                    <div className="rounded-[22px] border border-slate-200 bg-white px-4 py-4">
+                      <p className="text-[11px] uppercase tracking-[0.24em] text-slate-400">Completed</p>
+                      <p className="mt-2 text-3xl text-slate-950">{summary.bySheet[activeSheet?.name ?? ""]?.completed ?? 0}</p>
+                    </div>
+                    <div className="rounded-[22px] border border-slate-200 bg-white px-4 py-4">
+                      <p className="text-[11px] uppercase tracking-[0.24em] text-slate-400">Unfilled</p>
+                      <p className="mt-2 text-3xl text-slate-950">{summary.bySheet[activeSheet?.name ?? ""]?.unfilled ?? 0}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-4 px-5 py-4 sm:px-6 xl:flex-row xl:items-center xl:justify-between">
                 <div className="flex flex-wrap gap-2">
                   {FILTER_OPTIONS.map((option) => (
                     <button
@@ -271,15 +278,16 @@ export default function Home() {
                       </span>
                     </button>
                   ))}
-                  <button
-                    type="button"
-                    onClick={handleResetDraft}
-                    className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm text-slate-600 transition hover:border-slate-300 hover:bg-slate-50"
-                  >
-                    <RefreshCcw className="h-3.5 w-3.5" />
-                    Clear Draft
-                  </button>
                 </div>
+
+                <button
+                  type="button"
+                  onClick={handleResetDraft}
+                  className="inline-flex items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm text-slate-600 transition hover:border-slate-300 hover:bg-slate-50"
+                >
+                  <RefreshCcw className="h-3.5 w-3.5" />
+                  Clear Draft
+                </button>
               </div>
             </section>
 

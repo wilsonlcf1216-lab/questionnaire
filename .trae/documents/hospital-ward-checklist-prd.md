@@ -16,7 +16,7 @@
 | 公開填表頁 | 基本資料區 | 輸入 ward、inspection date、inspector、handover batch 等 metadata。 |
 | 公開填表頁 | 區域切換 | 讀取 Excel template 內 checklist sheet，例如 Ward Office Checklist、Patient Cubicle Checklist。 |
 | 公開填表頁 | 項目卡片 | 顯示 Item ID、Category、Element / Feature、Layman Checking Instructions、Target Location。 |
-| 公開填表頁 | 狀態與備註 | 每個 item 可選 Pass、Fail、Pending、N/A，並輸入 defect details。 |
+| 公開填表頁 | 狀態與備註 | 每個 item 只可選 Pass、Fail、N/A，未選則視為未填；可輸入精簡 defect details。 |
 | 公開填表頁 | 相片上載 | 每個 item 可加多張相，提交時連同資料上傳到 Supabase Storage。 |
 | 公開填表頁 | 提交按鈕 | 將整份檢查作為一個 submission 寫入 database，並生成 reference。 |
 | 提交確認頁 | 提交回執 | 顯示 submission ID、完成狀態、返回首頁再開新表單。 |
@@ -49,11 +49,13 @@ flowchart TD
 - 字體：標題採用較有秩序感嘅 serif / humanist display 字體，內文用清晰易讀字體，方便長時間現場操作。
 - 版面風格：desktop-first 雙欄工作台；公開填表頁左邊導覽與進度，右邊 item 卡片內容；admin 後台用資料面板式布局。
 - 圖示風格：簡潔線性 icon，重視狀態辨識同拍照動作提示。
+- 指令優先級：`Layman Checking Instructions` 需成為 item card 視覺焦點，比 notes / photo evidence 更突出。
+- 資訊密度：`Notes / Defect Details` 同 `Photo Evidence` 保持精簡，避免搶走 instruction 焦點。
 
 ### 4.2 頁面設計概覽
 | 頁面名稱 | 模組名稱 | UI 元素 |
 |-----------|-------------|-------------|
-| 檢查主頁 | Header | 報告標題、Excel template 名稱、儲存狀態、Export 按鈕。 |
+| 檢查主頁 | Header | 報告標題、template 名稱、儲存狀態、提交與後台捷徑。 |
 | 檢查主頁 | 基本資料區 | 表單欄位、日期選擇器、dropdown、輸入驗證提示。 |
 | 檢查主頁 | 區域導覽 | checklist 區域列表、完成進度條、Fail 項目數 badge。 |
 | 項目檢查頁 | 項目卡 | 清晰分段展示 item metadata、instruction、location、status、notes、images。 |

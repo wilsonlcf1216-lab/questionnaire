@@ -41,7 +41,7 @@ flowchart LR
 ## 5. 核心資料結構
 ### 4.1 TypeScript 資料模型
 ```ts
-type ChecklistStatus = 'Pass' | 'Fail' | 'Pending' | 'N/A';
+type ChecklistStatus = 'Pass' | 'Fail' | 'N/A';
 
 interface ChecklistTemplateItem {
   id: string;
@@ -106,9 +106,10 @@ interface InspectionDraft {
 ## 7. 介面與驗證規則
 - `Submit`：先驗證必填 metadata，再上傳 submission。
 - 後台只接受已登入管理者進入。
-- 狀態欄必須只接受 `Pass / Fail / Pending / N/A`。
+- 狀態欄必須只接受 `Pass / Fail / N/A`，未選狀態則當作未填。
 - 圖片接受 `jpg`、`jpeg`、`png`、`webp`；上傳前會壓縮。
 - GitHub Pages build 以 `VITE_SUPABASE_URL`、`VITE_SUPABASE_ANON_KEY`、`VITE_BASE_PATH` 注入。
+- item card 以 instruction 區塊作主視覺，notes 與 photo uploader 採 compact layout。
 
 ## 8. 風險與處理
 - GitHub Pages 只係靜態 hosting：資料收集完全依賴 Supabase，不能只靠 GitHub repo。

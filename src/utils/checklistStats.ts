@@ -8,7 +8,7 @@ import type {
 const createEmptyStats = (): SheetStats => ({
   total: 0,
   completed: 0,
-  pending: 0,
+  unfilled: 0,
   pass: 0,
   fail: 0,
   na: 0,
@@ -36,8 +36,8 @@ export function buildInspectionSummary(
       overall.total += 1;
 
       if (!result?.status) {
-        sheetStats.pending += 1;
-        overall.pending += 1;
+        sheetStats.unfilled += 1;
+        overall.unfilled += 1;
         continue;
       }
 
@@ -53,9 +53,6 @@ export function buildInspectionSummary(
       } else if (result.status === "N/A") {
         sheetStats.na += 1;
         overall.na += 1;
-      } else if (result.status === "Pending") {
-        sheetStats.pending += 1;
-        overall.pending += 1;
       }
     }
 

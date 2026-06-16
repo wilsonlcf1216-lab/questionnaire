@@ -34,7 +34,7 @@ export function buildSubmissionInsertRow(
     total_items: summary.total,
     pass_count: summary.pass,
     fail_count: summary.fail,
-    pending_count: summary.pending,
+    pending_count: summary.unfilled,
     na_count: summary.na,
   };
 }
@@ -58,7 +58,7 @@ export function buildSubmissionRecord(
     totalItems: summary.total,
     passCount: summary.pass,
     failCount: summary.fail,
-    pendingCount: summary.pending,
+    pendingCount: summary.unfilled,
     naCount: summary.na,
   };
 }

@@ -57,7 +57,7 @@ export function SectionNav({ sheets, activeSheetName, summary, onSelect }: Secti
 
               <div className="mt-4 flex items-center justify-between text-xs text-slate-300">
                 <span>Fail: {stats?.fail ?? 0}</span>
-                <span>Pending: {stats?.pending ?? 0}</span>
+                <span>Unfilled: {stats?.unfilled ?? 0}</span>
                 {stats?.fail ? (
                   <span className="inline-flex items-center gap-1 text-amber-300">
                     <CircleAlert className="h-3.5 w-3.5" />

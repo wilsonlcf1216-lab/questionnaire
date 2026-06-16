@@ -74,12 +74,12 @@ describe("buildInspectionSummary", () => {
     expect(summary.overall.completionRate).toBe(100);
   });
 
-  it("treats blank statuses as pending work", () => {
+  it("treats blank statuses as unfilled work", () => {
     const summary = buildInspectionSummary(sheets, {});
 
     expect(summary.overall.total).toBe(2);
     expect(summary.overall.completed).toBe(0);
-    expect(summary.overall.pending).toBe(2);
+    expect(summary.overall.unfilled).toBe(2);
     expect(summary.overall.completionRate).toBe(0);
   });
 });
