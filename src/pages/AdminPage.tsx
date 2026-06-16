@@ -250,7 +250,8 @@ export default function AdminPage() {
                       </div>
 
                       <div className="mt-4 rounded-2xl bg-white px-4 py-3 text-sm text-slate-600">
-                        {item.notes || "No notes"}
+                        <p className="font-medium text-slate-900">Category: {item.category || "Uncategorized"}</p>
+                        <p className="mt-2">{item.notes || "No notes"}</p>
                       </div>
 
                       {item.photos.length > 0 ? (
@@ -264,7 +265,10 @@ export default function AdminPage() {
                               className="overflow-hidden rounded-[18px] border border-slate-200 bg-white transition hover:shadow-md"
                             >
                               <img src={photo.photoUrl} alt={photo.fileName} className="h-40 w-full object-cover" />
-                              <div className="p-3 text-xs text-slate-500">{photo.fileName}</div>
+                              <div className="space-y-1 p-3 text-xs text-slate-500">
+                                <p>{photo.fileName}</p>
+                                <p className="truncate text-[11px] text-slate-400">{photo.storagePath}</p>
+                              </div>
                             </a>
                           ))}
                         </div>

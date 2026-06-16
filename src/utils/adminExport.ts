@@ -55,6 +55,7 @@ export function exportSubmissionDetailCsv(detail: SubmissionDetail) {
     ["submitted_at", detail.submittedAt],
     [],
     [
+      "submission_item_id",
       "item_id",
       "sheet_name",
       "category",
@@ -62,18 +63,44 @@ export function exportSubmissionDetailCsv(detail: SubmissionDetail) {
       "target_location",
       "status",
       "notes",
-      "photo_urls",
+      "photo_count",
+      "photo_file_name",
+      "photo_storage_path",
+      "photo_url",
     ],
-    ...detail.items.map((item) => [
-      item.itemId,
-      item.sheetName,
-      item.category,
-      item.element,
-      item.targetLocation,
-      item.status,
-      item.notes,
-      item.photos.map((photo) => photo.photoUrl).join(" | "),
-    ]),
+    ...detail.items.flatMap((item) => {
+      if (item.photos.length === 0) {
+        return [[
+          item.id,
+          item.itemId,
+          item.sheetName,
+          item.category,
+          item.element,
+          item.targetLocation,
+          item.status,
+          item.notes,
+          0,
+          "",
+          "",
+          "",
+        ]];
+      }
+
+      return item.photos.map((photo) => [
+        item.id,
+        item.itemId,
+        item.sheetName,
+        item.category,
+        item.element,
+        item.targetLocation,
+        item.status,
+        item.notes,
+        item.photos.length,
+        photo.fileName,
+        photo.storagePath,
+        photo.photoUrl,
+      ]);
+    }),
   ];
 
   const csv = rows

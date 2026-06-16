@@ -17,6 +17,7 @@ import {
   buildSubmissionRecord,
   createSubmissionItemSourceKey,
 } from "@/utils/submissionMapper";
+import { sanitizeStorageSegment } from "@/utils/file";
 
 function dataUrlToBlob(dataUrl: string): Blob {
   const [header, base64] = dataUrl.split(",");
@@ -34,6 +35,7 @@ function dataUrlToBlob(dataUrl: string): Blob {
 
 async function uploadSubmissionPhotos(params: {
   submissionId: string;
+  sheets: ChecklistSheet[];
   results: Record<string, InspectionItemResult>;
 }) {
   if (!supabase) {
@@ -41,6 +43,19 @@ async function uploadSubmissionPhotos(params: {
   }
 
   const photoUrlByItem: Record<string, Array<{ fileName: string; storagePath: string; photoUrl: string }>> = {};
+  const itemLookup = params.sheets.reduce<Record<string, { itemId: string; sheetName: string; category: string }>>(
+    (accumulator, sheet) => {
+      for (const item of sheet.items) {
+        accumulator[item.sourceKey] = {
+          itemId: item.id,
+          sheetName: sheet.name,
+          category: item.category,
+        };
+      }
+      return accumulator;
+    },
+    {},
+  );
 
   for (const [sourceKey, result] of Object.entries(params.results)) {
     if (!result.photos.length) {
@@ -48,11 +63,15 @@ async function uploadSubmissionPhotos(params: {
     }
 
     photoUrlByItem[sourceKey] = [];
+    const itemMeta = itemLookup[sourceKey];
+    const safeSheetName = sanitizeStorageSegment(itemMeta?.sheetName ?? "sheet", "sheet");
+    const safeItemId = sanitizeStorageSegment(itemMeta?.itemId ?? result.itemId, "item");
+    const safeCategory = sanitizeStorageSegment(itemMeta?.category ?? "uncategorized", "uncategorized");
 
     for (const photo of result.photos) {
       const extension = photo.mimeType === "image/png" ? "png" : "jpg";
-      const fileName = `${photo.id}.${extension}`;
-      const storagePath = `${params.submissionId}/${result.itemId}/${fileName}`;
+      const fileName = `${safeItemId}__${safeCategory}__${photo.id}.${extension}`;
+      const storagePath = `${params.submissionId}/${safeSheetName}/${safeItemId}/${safeCategory}/${fileName}`;
       const blob = dataUrlToBlob(photo.dataUrl);
 
       const uploadResult = await supabase.storage
@@ -129,6 +148,7 @@ export async function submitInspection(params: {
 
   const photoUrlByItem = await uploadSubmissionPhotos({
     submissionId,
+    sheets: params.sheets,
     results: params.results,
   });
 
