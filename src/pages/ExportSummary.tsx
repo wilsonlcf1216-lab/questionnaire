@@ -44,12 +44,12 @@ export default function ExportSummary() {
               <p className="mt-2 text-3xl text-rose-700">{summary.overall.fail}</p>
             </div>
             <div className="rounded-[20px] border border-slate-200 bg-slate-50 p-4">
-              <p className="text-xs uppercase tracking-[0.22em] text-slate-400">Pending</p>
-              <p className="mt-2 text-3xl text-amber-700">{summary.overall.pending}</p>
+              <p className="text-xs uppercase tracking-[0.22em] text-slate-400">N/A</p>
+              <p className="mt-2 text-3xl text-slate-700">{summary.overall.na}</p>
             </div>
             <div className="rounded-[20px] border border-slate-200 bg-slate-50 p-4">
-              <p className="text-xs uppercase tracking-[0.22em] text-slate-400">Completion</p>
-              <p className="mt-2 text-3xl text-slate-900">{summary.overall.completionRate}%</p>
+              <p className="text-xs uppercase tracking-[0.22em] text-slate-400">Unfilled</p>
+              <p className="mt-2 text-3xl text-amber-700">{summary.overall.unfilled}</p>
             </div>
           </div>
         ) : null}

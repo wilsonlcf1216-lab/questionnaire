@@ -10,9 +10,10 @@
   font-weight: 400;
   color: #0f172a;
   background:
-    radial-gradient(circle at top left, rgba(45, 212, 191, 0.12), transparent 24%),
-    radial-gradient(circle at top right, rgba(14, 165, 233, 0.08), transparent 26%),
-    #f3f3ef;
+    radial-gradient(circle at top left, rgba(45, 212, 191, 0.14), transparent 22%),
+    radial-gradient(circle at top right, rgba(14, 165, 233, 0.1), transparent 24%),
+    radial-gradient(circle at bottom right, rgba(251, 191, 36, 0.08), transparent 18%),
+    #eef2ec;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -26,6 +27,7 @@
 
   body {
     @apply m-0 min-h-screen text-slate-900;
+    background-attachment: fixed;
   }
 
   button,

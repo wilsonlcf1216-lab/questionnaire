@@ -1,4 +1,4 @@
-export type ChecklistStatus = "Pass" | "Fail" | "Pending" | "N/A";
+export type ChecklistStatus = "Pass" | "Fail" | "N/A";
 
 export interface ChecklistItem {
   id: string;
@@ -106,7 +106,7 @@ export interface TemplatePayload {
 export interface SheetStats {
   total: number;
   completed: number;
-  pending: number;
+  unfilled: number;
   pass: number;
   fail: number;
   na: number;
@@ -118,7 +118,7 @@ export interface InspectionSummary {
   bySheet: Record<string, SheetStats>;
 }
 
-export const CHECKLIST_STATUSES: ChecklistStatus[] = ["Pass", "Fail", "Pending", "N/A"];
+export const CHECKLIST_STATUSES: ChecklistStatus[] = ["Pass", "Fail", "N/A"];
 
 export const EMPTY_META: InspectionMeta = {
   wardName: "",

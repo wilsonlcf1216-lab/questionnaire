@@ -21,7 +21,6 @@ export default function SubmittedPage() {
         <h1 className="mt-5 font-display text-5xl text-slate-900">Submission 已提交</h1>
         <p className="mt-4 text-sm leading-7 text-slate-600">
           使用者唔需要下載檔案，資料已集中送去你嘅收集系統。
-          {state.mode === "demo" ? " 目前顯示為 demo mode，正式上線請接上 Supabase。" : ""}
         </p>
 
         {submission ? (
@@ -41,7 +40,8 @@ export default function SubmittedPage() {
             <div>
               <p className="text-xs uppercase tracking-[0.22em] text-slate-400">Summary</p>
               <p className="mt-2 text-sm font-medium text-slate-900">
-                Pass {submission.passCount} / Fail {submission.failCount} / Pending {submission.pendingCount}
+                Pass {submission.passCount} / Fail {submission.failCount} / N/A {submission.naCount} / Unfilled{" "}
+                {submission.pendingCount}
               </p>
             </div>
           </div>

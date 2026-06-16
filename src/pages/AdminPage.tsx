@@ -218,7 +218,7 @@ export default function AdminPage() {
                   {[
                     ["Pass", detail.passCount],
                     ["Fail", detail.failCount],
-                    ["Pending", detail.pendingCount],
+                    ["Unfilled", detail.pendingCount],
                     ["N/A", detail.naCount],
                     ["Total", detail.totalItems],
                   ].map(([label, value]) => (

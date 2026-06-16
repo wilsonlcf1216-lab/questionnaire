@@ -67,7 +67,7 @@ function writeSummaryDashboard(
     worksheet.getCell(`B${rowNumber}`).value = stats.total;
     worksheet.getCell(`C${rowNumber}`).value = stats.pass;
     worksheet.getCell(`D${rowNumber}`).value = stats.fail;
-    worksheet.getCell(`E${rowNumber}`).value = stats.pending;
+    worksheet.getCell(`E${rowNumber}`).value = stats.unfilled;
     worksheet.getCell(`F${rowNumber}`).value = stats.na;
     worksheet.getCell(`G${rowNumber}`).value = stats.completionRate / 100;
     worksheet.getCell(`G${rowNumber}`).numFmt = "0%";
@@ -77,7 +77,7 @@ function writeSummaryDashboard(
     worksheet.getCell(`B${totalRow}`).value = summary.overall.total;
     worksheet.getCell(`C${totalRow}`).value = summary.overall.pass;
     worksheet.getCell(`D${totalRow}`).value = summary.overall.fail;
-    worksheet.getCell(`E${totalRow}`).value = summary.overall.pending;
+    worksheet.getCell(`E${totalRow}`).value = summary.overall.unfilled;
     worksheet.getCell(`F${totalRow}`).value = summary.overall.na;
     worksheet.getCell(`G${totalRow}`).value = summary.overall.completionRate / 100;
     worksheet.getCell(`G${totalRow}`).numFmt = "0%";
