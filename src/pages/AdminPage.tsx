@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Download, LogOut, RefreshCw, Shield, Table2 } from "lucide-react";
+import { Download, LoaderCircle, LogOut, RefreshCw, Shield, Table2 } from "lucide-react";
 
 import {
   canAccessAdmin,
@@ -10,7 +10,7 @@ import {
   signOutAdmin,
 } from "@/services/adminService";
 import type { SubmissionDetail, SubmissionRecord } from "@/types/checklist";
-import { exportSubmissionDetailCsv, exportSubmissionListCsv } from "@/utils/adminExport";
+import { exportSubmissionDetailCsv, exportSubmissionListCsv, exportSubmissionZip } from "@/utils/adminExport";
 import { isSupabaseConfigured } from "@/utils/env";
 
 export default function AdminPage() {
@@ -22,6 +22,7 @@ export default function AdminPage() {
   const [selectedId, setSelectedId] = useState("");
   const [detail, setDetail] = useState<SubmissionDetail | null>(null);
   const [search, setSearch] = useState("");
+  const [isExportingZip, setIsExportingZip] = useState(false);
 
   async function refreshSubmissions() {
     setLoading(true);
@@ -67,6 +68,22 @@ export default function AdminPage() {
   async function handleSignOut() {
     await signOutAdmin();
     navigate("/admin/login");
+  }
+
+  async function handleExportZip() {
+    if (!detail) {
+      return;
+    }
+
+    try {
+      setIsExportingZip(true);
+      await exportSubmissionZip(detail);
+      setError("");
+    } catch (exportError) {
+      setError(exportError instanceof Error ? exportError.message : "未能下載 submission ZIP");
+    } finally {
+      setIsExportingZip(false);
+    }
   }
 
   const filteredSubmissions = useMemo(
@@ -204,14 +221,25 @@ export default function AdminPage() {
                       {detail.inspectorName} · {detail.inspectionDate} · {detail.submittedAt}
                     </p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => exportSubmissionDetailCsv(detail)}
-                    className="inline-flex items-center gap-2 rounded-full bg-slate-950 px-5 py-3 text-sm font-medium text-white transition hover:bg-teal-900"
-                  >
-                    <Table2 className="h-4 w-4" />
-                    Export 呢份 CSV
-                  </button>
+                  <div className="flex flex-wrap gap-3">
+                    <button
+                      type="button"
+                      onClick={() => exportSubmissionDetailCsv(detail)}
+                      className="inline-flex items-center gap-2 rounded-full bg-slate-950 px-5 py-3 text-sm font-medium text-white transition hover:bg-teal-900"
+                    >
+                      <Table2 className="h-4 w-4" />
+                      Export 呢份 CSV
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleExportZip}
+                      disabled={isExportingZip}
+                      className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-5 py-3 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {isExportingZip ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                      {isExportingZip ? "整理 ZIP 中..." : "Download submission ZIP"}
+                    </button>
+                  </div>
                 </div>
 
                 <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">

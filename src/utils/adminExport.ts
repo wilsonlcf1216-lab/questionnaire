@@ -1,5 +1,7 @@
+import JSZip from "jszip";
+
 import type { SubmissionDetail, SubmissionRecord } from "@/types/checklist";
-import { downloadBlob } from "@/utils/file";
+import { downloadBlob, sanitizeStorageSegment } from "@/utils/file";
 
 function escapeCsv(value: string | number) {
   const text = String(value ?? "");
@@ -7,6 +9,10 @@ function escapeCsv(value: string | number) {
     return `"${text.replace(/"/g, '""')}"`;
   }
   return text;
+}
+
+function buildCsv(rows: Array<Array<string | number>>) {
+  return rows.map((row) => row.map((cell) => escapeCsv(cell ?? "")).join(",")).join("\n");
 }
 
 export function exportSubmissionListCsv(submissions: SubmissionRecord[]) {
@@ -41,12 +47,12 @@ export function exportSubmissionListCsv(submissions: SubmissionRecord[]) {
     ]),
   ];
 
-  const csv = rows.map((row) => row.map(escapeCsv).join(",")).join("\n");
+  const csv = buildCsv(rows);
   downloadBlob(new Blob([csv], { type: "text/csv;charset=utf-8" }), "submissions.csv");
 }
 
-export function exportSubmissionDetailCsv(detail: SubmissionDetail) {
-  const rows = [
+function buildSubmissionDetailRows(detail: SubmissionDetail): Array<Array<string | number>> {
+  return [
     ["submission_id", detail.id],
     ["ward_name", detail.wardName],
     ["inspector_name", detail.inspectorName],
@@ -102,13 +108,78 @@ export function exportSubmissionDetailCsv(detail: SubmissionDetail) {
       ]);
     }),
   ];
+}
 
-  const csv = rows
-    .map((row) => row.map((cell) => escapeCsv(cell ?? "")).join(","))
-    .join("\n");
+export function exportSubmissionDetailCsv(detail: SubmissionDetail) {
+  const rows = buildSubmissionDetailRows(detail);
+
+  const csv = buildCsv(rows);
 
   downloadBlob(
     new Blob([csv], { type: "text/csv;charset=utf-8" }),
     `submission-${detail.id}.csv`,
   );
+}
+
+function inferFileExtension(contentType: string | null, fallbackName: string) {
+  if (fallbackName.includes(".")) {
+    return fallbackName.split(".").pop() || "jpg";
+  }
+
+  if (contentType?.includes("png")) {
+    return "png";
+  }
+
+  if (contentType?.includes("webp")) {
+    return "webp";
+  }
+
+  return "jpg";
+}
+
+async function fetchPhotoBlob(photoUrl: string) {
+  const response = await fetch(photoUrl);
+  if (!response.ok) {
+    throw new Error(`未能下載相片：${photoUrl}`);
+  }
+
+  return response.blob();
+}
+
+export async function exportSubmissionZip(detail: SubmissionDetail) {
+  const zip = new JSZip();
+  const rootFolder = zip.folder(`submission-${detail.id}`);
+  if (!rootFolder) {
+    throw new Error("未能建立 ZIP 檔案");
+  }
+
+  rootFolder.file(
+    "submission.csv",
+    buildCsv(buildSubmissionDetailRows(detail)),
+  );
+
+  const photosFolder = rootFolder.folder("photos");
+  if (!photosFolder) {
+    throw new Error("未能建立相片資料夾");
+  }
+
+  for (const item of detail.items) {
+    const itemFolder = photosFolder.folder(
+      `${sanitizeStorageSegment(item.sheetName, "sheet")}/${sanitizeStorageSegment(item.itemId, "item")}/${sanitizeStorageSegment(item.category, "uncategorized")}`,
+    );
+
+    if (!itemFolder) {
+      continue;
+    }
+
+    for (const [index, photo] of item.photos.entries()) {
+      const blob = await fetchPhotoBlob(photo.photoUrl);
+      const extension = inferFileExtension(blob.type, photo.fileName);
+      const fileName = `${sanitizeStorageSegment(item.itemId, "item")}__${sanitizeStorageSegment(item.category, "uncategorized")}__${index + 1}.${extension}`;
+      itemFolder.file(fileName, blob);
+    }
+  }
+
+  const zipBlob = await zip.generateAsync({ type: "blob" });
+  downloadBlob(zipBlob, `submission-${detail.id}.zip`);
 }
