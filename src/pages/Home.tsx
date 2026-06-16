@@ -4,7 +4,6 @@ import { LoaderCircle, Save, Send } from "lucide-react";
 
 import { ItemCard } from "@/components/ItemCard";
 import { MetaFormCard } from "@/components/MetaFormCard";
-import { SectionNav } from "@/components/SectionNav";
 import { SummaryPanel } from "@/components/SummaryPanel";
 import { submitInspection } from "@/services/submissionService";
 import { useInspectionStore } from "@/store/useInspectionStore";
@@ -176,12 +175,6 @@ export default function Home() {
         <div className="grid gap-6 xl:grid-cols-[370px_minmax(0,1fr)]">
           <div className="space-y-6 xl:sticky xl:top-6 xl:max-h-[calc(100vh-3rem)] xl:overflow-y-auto xl:pr-1 xl:self-start">
             <MetaFormCard meta={meta} onChange={updateMeta} />
-            <SectionNav
-              sheets={sheets}
-              activeSheetName={activeSheet?.name ?? ""}
-              summary={summary}
-              onSelect={setActiveSheet}
-            />
             <SummaryPanel summary={summary} />
           </div>
 
