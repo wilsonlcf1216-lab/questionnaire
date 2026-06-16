@@ -17,6 +17,30 @@ function isMetaValid(meta: { wardName: string; inspectorName: string; inspection
   return Boolean(meta.wardName && meta.inspectorName && meta.inspectionDate);
 }
 
+function getFailValidationError(
+  sheets: { label: string; items: Array<{ id: string; sourceKey: string; element: string }> }[],
+  results: Record<string, { status: string; notes: string; photos: Array<unknown> }>,
+) {
+  for (const sheet of sheets) {
+    for (const item of sheet.items) {
+      const result = results[item.sourceKey];
+      if (result?.status !== "Fail") {
+        continue;
+      }
+
+      if (!result.notes.trim()) {
+        return `${sheet.label} - ${item.id} ${item.element}：標記為 Fail 時必須填寫 Notes / Defect Details`;
+      }
+
+      if (!result.photos.length) {
+        return `${sheet.label} - ${item.id} ${item.element}：標記為 Fail 時必須上載至少一張相片`;
+      }
+    }
+  }
+
+  return "";
+}
+
 export default function Home() {
   const navigate = useNavigate();
   const [isSaving, setIsSaving] = useState(false);
@@ -114,6 +138,12 @@ export default function Home() {
 
     if (!isMetaValid(meta)) {
       setActionError("請先填寫 Ward、Inspector 同 Inspection Date，之後先可以提交");
+      return;
+    }
+
+    const failValidationError = getFailValidationError(sheets, results);
+    if (failValidationError) {
+      setActionError(failValidationError);
       return;
     }
 

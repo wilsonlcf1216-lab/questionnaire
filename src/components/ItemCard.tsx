@@ -34,6 +34,7 @@ export function ItemCard({
   onRemovePhoto,
 }: ItemCardProps) {
   const status = result?.status ?? "";
+  const isFail = status === "Fail";
 
   return (
     <article className="overflow-hidden rounded-[30px] border border-slate-200/80 bg-white/95 shadow-[0_22px_60px_rgba(15,23,42,0.08)] backdrop-blur">
@@ -103,33 +104,41 @@ export function ItemCard({
         </div>
       </div>
 
-      <div className="grid gap-4 px-5 py-5 sm:px-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(300px,0.75fr)]">
-        <div className="rounded-[24px] border border-slate-200 bg-slate-50/80 p-4">
-          <p className="mb-3 inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">
-            <NotebookPen className="h-3.5 w-3.5" />
-            Notes / Defect Details
-          </p>
-          <textarea
-            rows={4}
-            value={result?.notes ?? ""}
-            onChange={(event) => onNotesChange(item.sourceKey, item.id, event.target.value)}
-            placeholder="例如：paint chip near door frame / glass scratch on lower panel / closer not aligned..."
-            className="w-full rounded-[20px] border border-slate-200 bg-white px-4 py-3 text-sm leading-6 text-slate-900 outline-none transition focus:border-teal-500"
-          />
-        </div>
+      {isFail ? (
+        <div className="space-y-4 px-5 py-5 sm:px-6">
+          <div className="rounded-[20px] border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+            `Fail` 項目必須填寫 defect details，同時至少上載一張相片。
+          </div>
 
-        <div className="rounded-[24px] border border-slate-200 bg-slate-50/80 p-4">
-          <p className="mb-3 inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">
-            <Camera className="h-3.5 w-3.5" />
-            Photo Evidence
-          </p>
-          <PhotoPicker
-            photos={result?.photos ?? []}
-            onAdd={(files) => onAddPhotos(item.sourceKey, item.id, files)}
-            onRemove={(photoId) => onRemovePhoto(item.sourceKey, item.id, photoId)}
-          />
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,0.9fr)_minmax(300px,0.75fr)]">
+            <div className="rounded-[24px] border border-slate-200 bg-slate-50/80 p-4">
+              <p className="mb-3 inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">
+                <NotebookPen className="h-3.5 w-3.5" />
+                Notes / Defect Details
+              </p>
+              <textarea
+                rows={4}
+                value={result?.notes ?? ""}
+                onChange={(event) => onNotesChange(item.sourceKey, item.id, event.target.value)}
+                placeholder="例如：paint chip near door frame / glass scratch on lower panel / closer not aligned..."
+                className="w-full rounded-[20px] border border-slate-200 bg-white px-4 py-3 text-sm leading-6 text-slate-900 outline-none transition focus:border-teal-500"
+              />
+            </div>
+
+            <div className="rounded-[24px] border border-slate-200 bg-slate-50/80 p-4">
+              <p className="mb-3 inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">
+                <Camera className="h-3.5 w-3.5" />
+                Photo Evidence
+              </p>
+              <PhotoPicker
+                photos={result?.photos ?? []}
+                onAdd={(files) => onAddPhotos(item.sourceKey, item.id, files)}
+                onRemove={(photoId) => onRemovePhoto(item.sourceKey, item.id, photoId)}
+              />
+            </div>
+          </div>
         </div>
-      </div>
+      ) : null}
     </article>
   );
 }
