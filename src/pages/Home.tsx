@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Filter, LoaderCircle, Save, Send } from "lucide-react";
+import { LoaderCircle, Save, Send } from "lucide-react";
 
 import { ItemCard } from "@/components/ItemCard";
 import { MetaFormCard } from "@/components/MetaFormCard";
@@ -8,15 +8,11 @@ import { SectionNav } from "@/components/SectionNav";
 import { SummaryPanel } from "@/components/SummaryPanel";
 import { submitInspection } from "@/services/submissionService";
 import { useInspectionStore } from "@/store/useInspectionStore";
-import type { ChecklistStatus, InspectionDraft } from "@/types/checklist";
+import type { InspectionDraft } from "@/types/checklist";
 import { buildInspectionSummary } from "@/utils/checklistStats";
 import { preparePhoto } from "@/utils/image";
 import { clearDraftFromStorage, loadDraftFromStorage, saveDraftToStorage } from "@/utils/storage";
 import { loadTemplateWorkbook } from "@/utils/template";
-
-type FilterValue = "All" | "Unfilled" | ChecklistStatus;
-
-const FILTER_OPTIONS: FilterValue[] = ["All", "Pass", "Fail", "N/A", "Unfilled"];
 
 function isMetaValid(meta: { wardName: string; inspectorName: string; inspectionDate: string }) {
   return Boolean(meta.wardName && meta.inspectorName && meta.inspectionDate);
@@ -24,7 +20,6 @@ function isMetaValid(meta: { wardName: string; inspectorName: string; inspection
 
 export default function Home() {
   const navigate = useNavigate();
-  const [statusFilter, setStatusFilter] = useState<FilterValue>("All");
   const [isSaving, setIsSaving] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [actionError, setActionError] = useState("");
@@ -78,25 +73,6 @@ export default function Home() {
     () => sheets.find((sheet) => sheet.name === activeSheetName) ?? sheets[0],
     [activeSheetName, sheets],
   );
-
-  const filteredItems = useMemo(() => {
-    if (!activeSheet) {
-      return [];
-    }
-
-    return activeSheet.items.filter((item) => {
-      if (statusFilter === "All") {
-        return true;
-      }
-
-      const status = results[item.sourceKey]?.status ?? "";
-      if (statusFilter === "Unfilled") {
-        return !status;
-      }
-
-      return status === statusFilter;
-    });
-  }, [activeSheet, results, statusFilter]);
 
   async function handleSave() {
     try {
@@ -235,31 +211,34 @@ export default function Home() {
                 </div>
               </div>
 
-              <div className="flex flex-col gap-4 px-5 py-4 sm:px-6 xl:flex-row xl:items-center xl:justify-between">
-                <div className="flex flex-wrap gap-2">
-                  {FILTER_OPTIONS.map((option) => (
-                    <button
-                      key={option}
-                      type="button"
-                      onClick={() => setStatusFilter(option)}
-                      className={`rounded-full px-4 py-2 text-sm transition ${
-                        statusFilter === option
-                          ? "bg-slate-950 text-white"
-                          : "border border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300 hover:bg-white"
-                      }`}
-                    >
-                      <span className="inline-flex items-center gap-2">
-                        <Filter className="h-3.5 w-3.5" />
-                        {option}
-                      </span>
-                    </button>
-                  ))}
+              <div className="px-5 py-4 sm:px-6">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-400">
+                  Check Zone
+                </p>
+                <div className="mt-3 flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                  {sheets.map((sheet) => {
+                    const active = sheet.name === activeSheet?.name;
+                    return (
+                      <button
+                        key={sheet.name}
+                        type="button"
+                        onClick={() => setActiveSheet(sheet.name)}
+                        className={`shrink-0 rounded-full px-4 py-2 text-sm font-medium transition ${
+                          active
+                            ? "bg-slate-950 text-white"
+                            : "border border-slate-200 bg-slate-50 text-slate-700 hover:border-slate-300 hover:bg-white"
+                        }`}
+                      >
+                        {sheet.label}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             </section>
 
             <section className="space-y-5">
-              {filteredItems.map((item) => (
+              {(activeSheet?.items ?? []).map((item) => (
                 <ItemCard
                   key={item.sourceKey}
                   item={item}
@@ -271,7 +250,7 @@ export default function Home() {
                 />
               ))}
 
-              {filteredItems.length === 0 ? (
+              {(activeSheet?.items ?? []).length === 0 ? (
                 <div className="rounded-[24px] border border-dashed border-slate-300 bg-white/80 p-10 text-center text-slate-500">
                   呢個篩選條件之下未有 item。
                 </div>
