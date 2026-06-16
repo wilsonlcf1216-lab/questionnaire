@@ -38,33 +38,38 @@ export function ItemCard({
   return (
     <article className="overflow-hidden rounded-[30px] border border-slate-200/80 bg-white/95 shadow-[0_22px_60px_rgba(15,23,42,0.08)] backdrop-blur">
       <div className="border-b border-slate-200/80 bg-[linear-gradient(135deg,rgba(240,253,250,0.95),rgba(255,255,255,0.96)_45%,rgba(241,245,249,0.92))] px-5 py-5 sm:px-6">
-        <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px] xl:items-start">
           <div className="space-y-4">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="rounded-full bg-slate-950 px-3 py-1.5 text-xs font-medium uppercase tracking-[0.2em] text-white">
-                {item.sheetLabel}
-              </span>
-              <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600">
-                {item.id}
-              </span>
-              <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-600">
-                {item.category}
-              </span>
-              <span className={`rounded-full border px-3 py-1.5 text-xs font-medium ${getStatusTone(status)}`}>
-                {status || "未選狀態"}
-              </span>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="rounded-full bg-slate-950 px-3 py-1.5 text-xs font-medium uppercase tracking-[0.2em] text-white">
+                  {item.id}
+                </span>
+                <h3 className="min-w-0 font-display text-[26px] leading-tight text-slate-950 sm:text-[30px]">
+                  {item.element}
+                </h3>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-600">
+                  {item.sheetLabel}
+                </span>
+                <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-600">
+                  {item.category}
+                </span>
+                <span className={`rounded-full border px-3 py-1.5 text-xs font-medium ${getStatusTone(status)}`}>
+                  {status || "未選狀態"}
+                </span>
+              </div>
             </div>
 
-            <div className="space-y-3">
-              <h3 className="font-display text-[28px] leading-tight text-slate-950 sm:text-[32px]">{item.element}</h3>
-              <div className="max-w-4xl rounded-[24px] border border-teal-100 bg-white/90 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] sm:p-5">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-teal-700">
-                  Critical Checking Instruction
-                </p>
-                <p className="mt-3 whitespace-pre-wrap text-[15px] font-medium leading-8 text-slate-700 sm:text-base">
-                  {item.instruction}
-                </p>
-              </div>
+            <div className="rounded-[24px] border border-teal-100 bg-white/90 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] sm:p-5">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-teal-700">
+                Critical Checking Instruction
+              </p>
+              <p className="mt-3 whitespace-pre-wrap text-[15px] font-medium leading-8 text-slate-700 sm:text-base">
+                {item.instruction}
+              </p>
             </div>
 
             <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-600">
@@ -73,7 +78,7 @@ export function ItemCard({
             </div>
           </div>
 
-          <div className="w-full max-w-[420px] rounded-[24px] border border-slate-200 bg-white/90 p-4">
+          <div className="w-full rounded-[24px] border border-slate-200 bg-white/90 p-4">
             <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-500">Select Result</p>
             <div className="mt-3 grid gap-2 sm:grid-cols-3 xl:grid-cols-1">
               {CHECKLIST_STATUSES.map((option) => (
