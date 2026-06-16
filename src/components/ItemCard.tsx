@@ -54,6 +54,10 @@ export function ItemCard({
                 <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-600">
                   {item.sheetLabel}
                 </span>
+                <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-600">
+                  <MapPin className="h-3.5 w-3.5" />
+                  {item.targetLocation || "Location not specified"}
+                </span>
                 <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-600">
                   {item.category}
                 </span>
@@ -70,11 +74,6 @@ export function ItemCard({
               <p className="mt-3 whitespace-pre-wrap text-[15px] font-medium leading-8 text-slate-700 sm:text-base">
                 {item.instruction}
               </p>
-            </div>
-
-            <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-600">
-              <MapPin className="h-3.5 w-3.5" />
-              {item.targetLocation || "Location not specified"}
             </div>
           </div>
 
