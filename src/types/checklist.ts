@@ -26,11 +26,19 @@ export interface InspectionPhoto {
   id: string;
   name: string;
   captureType?: "zoom-in" | "zoom-out";
+  defectRowId?: string;
   mimeType: string;
   dataUrl: string;
   width: number;
   height: number;
   createdAt: string;
+}
+
+export interface InspectionDefectRow {
+  id: string;
+  note: string;
+  zoomInPhoto: InspectionPhoto | null;
+  zoomOutPhoto: InspectionPhoto | null;
 }
 
 export interface InspectionItemResult {
@@ -39,6 +47,7 @@ export interface InspectionItemResult {
   status: ChecklistStatus | "";
   notes: string;
   photos: InspectionPhoto[];
+  defectRows: InspectionDefectRow[];
   updatedAt: string;
 }
 

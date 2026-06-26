@@ -1,20 +1,34 @@
-import { Camera, MapPin, NotebookPen } from "lucide-react";
+import { AlertTriangle, MapPin, NotebookPen, Trash2 } from "lucide-react";
 
 import { PhotoPicker } from "@/components/PhotoPicker";
-import { CHECKLIST_STATUSES, type ChecklistItem, type InspectionItemResult } from "@/types/checklist";
+import {
+  CHECKLIST_STATUSES,
+  type ChecklistItem,
+  type InspectionItemResult,
+  type InspectionPhoto,
+} from "@/types/checklist";
 
 interface ItemCardProps {
   item: ChecklistItem;
   result?: InspectionItemResult;
   onStatusChange: (sourceKey: string, itemId: string, status: InspectionItemResult["status"]) => void;
-  onNotesChange: (sourceKey: string, itemId: string, notes: string) => void;
+  onAddDefect: (sourceKey: string, itemId: string) => void;
+  onUpdateDefectNote: (sourceKey: string, itemId: string, rowId: string, note: string) => void;
   onAddPhotos: (
     sourceKey: string,
     itemId: string,
+    rowId: string,
     files: FileList | null,
     captureType: "zoom-in" | "zoom-out",
   ) => void;
-  onRemovePhoto: (sourceKey: string, itemId: string, photoId: string) => void;
+  onRemoveDefect: (sourceKey: string, itemId: string, rowId: string) => void;
+  onSetDefectPhoto: (
+    sourceKey: string,
+    itemId: string,
+    rowId: string,
+    captureType: "zoom-in" | "zoom-out",
+    photo: InspectionPhoto | null,
+  ) => void;
 }
 
 function getStatusTone(status: InspectionItemResult["status"]) {
@@ -30,41 +44,19 @@ function getStatusTone(status: InspectionItemResult["status"]) {
   }
 }
 
-function parseNoteLines(notes?: string) {
-  if (notes === undefined) {
-    return [""];
-  }
-
-  const lines = notes.split("\n");
-  return lines.length > 0 ? lines : [""];
-}
-
 export function ItemCard({
   item,
   result,
   onStatusChange,
-  onNotesChange,
+  onAddDefect,
+  onUpdateDefectNote,
   onAddPhotos,
-  onRemovePhoto,
+  onRemoveDefect,
+  onSetDefectPhoto,
 }: ItemCardProps) {
   const status = result?.status ?? "";
   const isFail = status === "Fail";
-  const noteLines = parseNoteLines(result?.notes);
-
-  function updateNoteLine(index: number, value: string) {
-    const nextLines = [...noteLines];
-    nextLines[index] = value;
-    onNotesChange(item.sourceKey, item.id, nextLines.join("\n"));
-  }
-
-  function addNoteLine() {
-    onNotesChange(item.sourceKey, item.id, [...noteLines, ""].join("\n"));
-  }
-
-  function removeNoteLine(index: number) {
-    const nextLines = noteLines.filter((_, lineIndex) => lineIndex !== index);
-    onNotesChange(item.sourceKey, item.id, (nextLines.length ? nextLines : [""]).join("\n"));
-  }
+  const defectRows = result?.defectRows ?? [];
 
   return (
     <article className="overflow-hidden rounded-[30px] border border-slate-200/80 bg-white/95 shadow-[0_22px_60px_rgba(15,23,42,0.08)] backdrop-blur">
@@ -133,59 +125,76 @@ export function ItemCard({
       {isFail ? (
         <div className="space-y-4 px-5 py-5 sm:px-6">
           <div className="rounded-[20px] border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-            `Fail` 項目必須填寫 defect details，同時至少上載一張相片。
+            <span className="inline-flex items-center gap-2 font-medium">
+              <AlertTriangle className="h-4 w-4" />
+              `Fail` 項目每個 defect 都要填 notes，同時要有 1 張 `Zoom In` 同 1 張 `Zoom Out`。
+            </span>
           </div>
 
-          <div className="rounded-[24px] border border-slate-200 bg-slate-50/80 p-4">
-            <div className="mb-3 flex items-center justify-between gap-3">
+          <div className="rounded-[24px] border border-slate-200 bg-slate-50/80 p-4 sm:p-5">
+            <div className="mb-4 flex items-center justify-between gap-3">
               <p className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">
                 <NotebookPen className="h-3.5 w-3.5" />
-                Notes / Defect Details
+                Defect Details
               </p>
-              <button
-                type="button"
-                onClick={addNoteLine}
-                className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:border-teal-500 hover:text-teal-700"
-              >
-                + Add Line
-              </button>
             </div>
 
-            <div className="space-y-3">
-              {noteLines.map((line, index) => (
-                <div key={`${item.sourceKey}-line-${index}`} className="flex items-center gap-2">
-                  <span className="w-8 shrink-0 text-center text-xs font-semibold text-slate-400">{index + 1}</span>
-                  <input
-                    type="text"
-                    value={line}
-                    onChange={(event) => updateNoteLine(index, event.target.value)}
-                    placeholder="例如：paint chip near door frame / glass scratch on lower panel / closer not aligned..."
-                    className="w-full rounded-[18px] border border-slate-200 bg-white px-4 py-3 text-sm leading-6 text-slate-900 outline-none transition focus:border-teal-500"
-                  />
-                  {noteLines.length > 1 ? (
+            <div className="space-y-4">
+              {defectRows.map((row, index) => (
+                <div key={row.id} className="rounded-[22px] border border-slate-200 bg-white p-4 shadow-sm">
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <p className="text-sm font-semibold text-slate-900">Defect {index + 1}</p>
                     <button
                       type="button"
-                      onClick={() => removeNoteLine(index)}
-                      className="rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-500 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600"
+                      onClick={() => onRemoveDefect(item.sourceKey, item.id, row.id)}
+                      className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-500 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600"
                     >
+                      <Trash2 className="h-3.5 w-3.5" />
                       Remove
                     </button>
-                  ) : null}
+                  </div>
+
+                  <div className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(280px,1fr)_minmax(280px,1fr)]">
+                    <div className="rounded-[22px] border border-slate-200 bg-white p-3">
+                      <p className="mb-3 text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+                        Notes
+                      </p>
+                      <input
+                        type="text"
+                        value={row.note}
+                        onChange={(event) => onUpdateDefectNote(item.sourceKey, item.id, row.id, event.target.value)}
+                        placeholder="例如：paint chip near door frame / glass scratch / closer not aligned"
+                        className="w-full rounded-[18px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-900 outline-none transition focus:border-teal-500 focus:bg-white"
+                      />
+                    </div>
+
+                    <PhotoPicker
+                      title="Zoom In"
+                      photo={row.zoomInPhoto}
+                      onAdd={(files) => onAddPhotos(item.sourceKey, item.id, row.id, files, "zoom-in")}
+                      onRemove={() => onSetDefectPhoto(item.sourceKey, item.id, row.id, "zoom-in", null)}
+                    />
+
+                    <PhotoPicker
+                      title="Zoom Out"
+                      photo={row.zoomOutPhoto}
+                      onAdd={(files) => onAddPhotos(item.sourceKey, item.id, row.id, files, "zoom-out")}
+                      onRemove={() => onSetDefectPhoto(item.sourceKey, item.id, row.id, "zoom-out", null)}
+                    />
+                  </div>
                 </div>
               ))}
             </div>
-          </div>
 
-          <div className="rounded-[24px] border border-slate-200 bg-slate-50/80 p-4">
-            <p className="mb-3 inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">
-              <Camera className="h-3.5 w-3.5" />
-              Photo Evidence
-            </p>
-            <PhotoPicker
-              photos={result?.photos ?? []}
-              onAdd={(files, captureType) => onAddPhotos(item.sourceKey, item.id, files, captureType)}
-              onRemove={(photoId) => onRemovePhoto(item.sourceKey, item.id, photoId)}
-            />
+            <div className="mt-4">
+              <button
+                type="button"
+                onClick={() => onAddDefect(item.sourceKey, item.id)}
+                className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-teal-500 hover:text-teal-700"
+              >
+                + Add Defect
+              </button>
+            </div>
           </div>
         </div>
       ) : null}

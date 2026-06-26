@@ -50,6 +50,7 @@ describe("buildInspectionSummary", () => {
         status: "Pass",
         notes: "",
         photos: [],
+        defectRows: [],
         updatedAt: "",
       },
       "OFF-02": {
@@ -58,6 +59,7 @@ describe("buildInspectionSummary", () => {
         status: "Fail",
         notes: "paint chip",
         photos: [],
+        defectRows: [],
         updatedAt: "",
       },
     };

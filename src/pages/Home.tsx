@@ -9,7 +9,7 @@ import { SectionNav } from "@/components/SectionNav";
 import { SummaryPanel } from "@/components/SummaryPanel";
 import { submitInspection } from "@/services/submissionService";
 import { useInspectionStore } from "@/store/useInspectionStore";
-import type { ChecklistStatus, InspectionDraft } from "@/types/checklist";
+import type { ChecklistStatus, InspectionDraft, InspectionItemResult } from "@/types/checklist";
 import { buildInspectionSummary } from "@/utils/checklistStats";
 import { preparePhoto } from "@/utils/image";
 import { clearDraftFromStorage, loadDraftFromStorage, saveDraftToStorage } from "@/utils/storage";
@@ -21,6 +21,42 @@ const FILTER_OPTIONS: FilterValue[] = ["All", "Pass", "Fail", "N/A", "Unfilled"]
 
 function isMetaValid(meta: { wardName: string; inspectorName: string; inspectionDate: string }) {
   return Boolean(meta.wardName && meta.inspectorName && meta.inspectionDate);
+}
+
+function getFailValidationError(
+  sheets: Array<{ label: string; items: Array<{ id: string; sourceKey: string; element: string }> }>,
+  results: Record<string, InspectionItemResult>,
+) {
+  for (const sheet of sheets) {
+    for (const item of sheet.items) {
+      const result = results[item.sourceKey];
+      if (result?.status !== "Fail") {
+        continue;
+      }
+
+      const populatedRows = result.defectRows.filter(
+        (row) => row.note.trim() || row.zoomInPhoto || row.zoomOutPhoto,
+      );
+
+      if (populatedRows.length === 0) {
+        return `${sheet.label} - ${item.id} ${item.element}：標記為 Fail 時必須至少新增一個 defect`;
+      }
+
+      for (const [index, row] of populatedRows.entries()) {
+        if (!row.note.trim()) {
+          return `${sheet.label} - ${item.id} ${item.element}：Defect ${index + 1} 必須填寫 notes`;
+        }
+        if (!row.zoomInPhoto) {
+          return `${sheet.label} - ${item.id} ${item.element}：Defect ${index + 1} 必須上載 Zoom In`;
+        }
+        if (!row.zoomOutPhoto) {
+          return `${sheet.label} - ${item.id} ${item.element}：Defect ${index + 1} 必須上載 Zoom Out`;
+        }
+      }
+    }
+  }
+
+  return "";
 }
 
 export default function Home() {
@@ -46,9 +82,10 @@ export default function Home() {
     setActiveSheet,
     updateMeta,
     updateStatus,
-    updateNotes,
-    appendPhotos,
-    removePhoto,
+    addDefectRow,
+    updateDefectNote,
+    setDefectPhoto,
+    removeDefectRow,
     hydrateDraft,
     markSaved,
     clearDraftData,
@@ -121,16 +158,22 @@ export default function Home() {
   async function handleAddPhotos(
     sourceKey: string,
     itemId: string,
+    rowId: string,
     files: FileList | null,
-    captureType?: "zoom-in" | "zoom-out",
+    captureType: "zoom-in" | "zoom-out",
   ) {
     if (!files?.length) {
       return;
     }
 
     try {
-      const prepared = await Promise.all(Array.from(files).map((file) => preparePhoto(file, captureType)));
-      appendPhotos(sourceKey, itemId, prepared);
+      const [firstFile] = Array.from(files);
+      if (!firstFile) {
+        return;
+      }
+
+      const prepared = await preparePhoto(firstFile, captureType);
+      setDefectPhoto(sourceKey, itemId, rowId, captureType, prepared);
       setActionError("");
     } catch (photoError) {
       setActionError(photoError instanceof Error ? photoError.message : "處理相片失敗");
@@ -145,6 +188,12 @@ export default function Home() {
 
     if (!isMetaValid(meta)) {
       setActionError("請先填寫 Ward、Inspector 同 Inspection Date，之後先可以提交");
+      return;
+    }
+
+    const failValidationError = getFailValidationError(sheets, results);
+    if (failValidationError) {
+      setActionError(failValidationError);
       return;
     }
 
@@ -222,15 +271,16 @@ export default function Home() {
           </div>
         ) : null}
 
+        <SectionNav
+          sheets={sheets}
+          activeSheetName={activeSheet?.name ?? ""}
+          summary={summary}
+          onSelect={setActiveSheet}
+        />
+
         <div className="grid gap-6 xl:grid-cols-[370px_minmax(0,1fr)]">
           <div className="space-y-6 xl:sticky xl:top-6 xl:self-start">
             <MetaFormCard meta={meta} onChange={updateMeta} />
-            <SectionNav
-              sheets={sheets}
-              activeSheetName={activeSheet?.name ?? ""}
-              summary={summary}
-              onSelect={setActiveSheet}
-            />
             <SummaryPanel summary={summary} />
           </div>
 
@@ -303,9 +353,11 @@ export default function Home() {
                   item={item}
                   result={results[item.sourceKey]}
                   onStatusChange={updateStatus}
-                  onNotesChange={updateNotes}
+                  onAddDefect={addDefectRow}
+                  onUpdateDefectNote={updateDefectNote}
                   onAddPhotos={handleAddPhotos}
-                  onRemovePhoto={removePhoto}
+                  onRemoveDefect={removeDefectRow}
+                  onSetDefectPhoto={setDefectPhoto}
                 />
               ))}
 
