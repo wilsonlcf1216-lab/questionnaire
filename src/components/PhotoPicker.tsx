@@ -12,10 +12,10 @@ interface PhotoPickerProps {
 
 export function PhotoPicker({ title, photo, onAdd, onRemove, disabled = false }: PhotoPickerProps) {
   return (
-    <div className="rounded-[22px] border border-slate-200 bg-white p-3">
+    <div className="rounded-[18px] border border-slate-200 bg-white p-3">
       <p className="mb-3 text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">{title}</p>
 
-      <label className="flex cursor-pointer items-center gap-3 rounded-[18px] border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-left transition hover:border-teal-500 hover:bg-teal-50">
+      <label className="flex cursor-pointer items-center gap-3 rounded-[16px] border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-left transition hover:border-teal-500 hover:bg-teal-50">
         <input
           type="file"
           accept="image/*"
@@ -37,7 +37,7 @@ export function PhotoPicker({ title, photo, onAdd, onRemove, disabled = false }:
       </label>
 
       {photo ? (
-        <figure className="mt-3 overflow-hidden rounded-[20px] border border-slate-200 bg-slate-50">
+        <figure className="mt-3 overflow-hidden rounded-[16px] border border-slate-200 bg-slate-50">
           <img src={photo.dataUrl} alt={photo.name} className="h-32 w-full object-cover" />
           <figcaption className="space-y-3 p-3">
             <div className="flex items-start justify-between gap-3">
@@ -58,7 +58,7 @@ export function PhotoPicker({ title, photo, onAdd, onRemove, disabled = false }:
           </figcaption>
         </figure>
       ) : (
-        <div className="mt-3 flex min-h-32 flex-col items-center justify-center rounded-[20px] border border-dashed border-slate-200 bg-slate-50 p-4 text-center text-slate-400">
+        <div className="mt-3 flex min-h-32 flex-col items-center justify-center rounded-[16px] border border-dashed border-slate-200 bg-slate-50 p-4 text-center text-slate-400">
           <ImagePlus className="h-4.5 w-4.5" />
           <p className="mt-2 text-xs">未有 {title} 相片</p>
         </div>

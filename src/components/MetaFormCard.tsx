@@ -16,7 +16,7 @@ const fields: Array<{ key: keyof InspectionMeta; label: string; placeholder: str
 
 export function MetaFormCard({ meta, onChange }: MetaFormCardProps) {
   return (
-    <section className="rounded-[24px] border border-slate-200/80 bg-white/90 p-5 shadow-sm backdrop-blur">
+    <section className="rounded-[24px] border border-slate-200 bg-white/90 p-5 shadow-sm">
       <div className="mb-5 flex items-center gap-3">
         <div className="rounded-2xl bg-teal-950 p-2 text-white">
           <ClipboardList className="h-4 w-4" />
@@ -38,7 +38,7 @@ export function MetaFormCard({ meta, onChange }: MetaFormCardProps) {
               value={meta[field.key]}
               onChange={(event) => onChange(field.key, event.target.value)}
               placeholder={field.placeholder}
-              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-teal-500 focus:bg-white"
+              className="w-full rounded-[16px] border border-slate-200 bg-[#f7f7f4] px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-teal-500 focus:bg-white"
             />
           </label>
         ))}
@@ -54,7 +54,7 @@ export function MetaFormCard({ meta, onChange }: MetaFormCardProps) {
           value={meta.remarks}
           onChange={(event) => onChange("remarks", event.target.value)}
           placeholder="可輸入總體備註、handover issue、跟進重點..."
-          className="w-full rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-teal-500 focus:bg-white"
+          className="w-full rounded-[16px] border border-slate-200 bg-[#f7f7f4] px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-teal-500 focus:bg-white"
         />
       </label>
     </section>

@@ -14,7 +14,7 @@ const cards = [
 
 export function SummaryPanel({ summary }: SummaryPanelProps) {
   return (
-    <section className="rounded-[24px] border border-slate-200/80 bg-white/90 p-5 shadow-sm backdrop-blur">
+    <section className="rounded-[24px] border border-slate-200 bg-white/90 p-5 shadow-sm">
       <div className="mb-5 flex items-end justify-between gap-3">
         <div>
           <p className="text-xs uppercase tracking-[0.22em] text-slate-400">Live Summary</p>
@@ -31,7 +31,7 @@ export function SummaryPanel({ summary }: SummaryPanelProps) {
           const value = summary.overall[card.key];
 
           return (
-            <div key={card.key} className="rounded-[20px] border border-slate-200 bg-slate-50 p-4">
+            <div key={card.key} className="rounded-[18px] border border-slate-200 bg-[#f7f7f4] p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs uppercase tracking-[0.2em] text-slate-400">{card.label}</p>
@@ -47,7 +47,7 @@ export function SummaryPanel({ summary }: SummaryPanelProps) {
       </div>
 
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
-        <div className="rounded-[20px] border border-slate-200 bg-slate-50 p-4">
+        <div className="rounded-[18px] border border-slate-200 bg-[#f7f7f4] p-4">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Unfilled</p>
@@ -59,7 +59,7 @@ export function SummaryPanel({ summary }: SummaryPanelProps) {
           </div>
         </div>
 
-        <div className="rounded-[20px] border border-slate-200 bg-slate-50 p-4">
+        <div className="rounded-[18px] border border-slate-200 bg-[#f7f7f4] p-4">
           <div className="flex items-center justify-between gap-3">
             <div>
               <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Checked</p>
