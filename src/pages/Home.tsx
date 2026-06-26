@@ -1,48 +1,31 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { LoaderCircle, Save, Send } from "lucide-react";
+import { Filter, LoaderCircle, RefreshCcw } from "lucide-react";
 
+import { AppHeader } from "@/components/AppHeader";
 import { ItemCard } from "@/components/ItemCard";
 import { MetaFormCard } from "@/components/MetaFormCard";
+import { SectionNav } from "@/components/SectionNav";
 import { SummaryPanel } from "@/components/SummaryPanel";
 import { submitInspection } from "@/services/submissionService";
 import { useInspectionStore } from "@/store/useInspectionStore";
-import type { InspectionDraft } from "@/types/checklist";
+import type { ChecklistStatus, InspectionDraft } from "@/types/checklist";
 import { buildInspectionSummary } from "@/utils/checklistStats";
 import { preparePhoto } from "@/utils/image";
 import { clearDraftFromStorage, loadDraftFromStorage, saveDraftToStorage } from "@/utils/storage";
 import { loadTemplateWorkbook } from "@/utils/template";
 
+type FilterValue = "All" | "Unfilled" | ChecklistStatus;
+
+const FILTER_OPTIONS: FilterValue[] = ["All", "Pass", "Fail", "N/A", "Unfilled"];
+
 function isMetaValid(meta: { wardName: string; inspectorName: string; inspectionDate: string }) {
   return Boolean(meta.wardName && meta.inspectorName && meta.inspectionDate);
 }
 
-function getFailValidationError(
-  sheets: { label: string; items: Array<{ id: string; sourceKey: string; element: string }> }[],
-  results: Record<string, { status: string; notes: string; photos: Array<unknown> }>,
-) {
-  for (const sheet of sheets) {
-    for (const item of sheet.items) {
-      const result = results[item.sourceKey];
-      if (result?.status !== "Fail") {
-        continue;
-      }
-
-      if (!result.notes.trim()) {
-        return `${sheet.label} - ${item.id} ${item.element}：標記為 Fail 時必須填寫 Notes / Defect Details`;
-      }
-
-      if (!result.photos.length) {
-        return `${sheet.label} - ${item.id} ${item.element}：標記為 Fail 時必須上載至少一張相片`;
-      }
-    }
-  }
-
-  return "";
-}
-
 export default function Home() {
   const navigate = useNavigate();
+  const [statusFilter, setStatusFilter] = useState<FilterValue>("All");
   const [isSaving, setIsSaving] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [actionError, setActionError] = useState("");
@@ -97,6 +80,25 @@ export default function Home() {
     [activeSheetName, sheets],
   );
 
+  const filteredItems = useMemo(() => {
+    if (!activeSheet) {
+      return [];
+    }
+
+    return activeSheet.items.filter((item) => {
+      if (statusFilter === "All") {
+        return true;
+      }
+
+      const status = results[item.sourceKey]?.status ?? "";
+      if (statusFilter === "Unfilled") {
+        return !status;
+      }
+
+      return status === statusFilter;
+    });
+  }, [activeSheet, results, statusFilter]);
+
   async function handleSave() {
     try {
       setIsSaving(true);
@@ -116,13 +118,18 @@ export default function Home() {
     }
   }
 
-  async function handleAddPhotos(sourceKey: string, itemId: string, files: FileList | null) {
+  async function handleAddPhotos(
+    sourceKey: string,
+    itemId: string,
+    files: FileList | null,
+    captureType?: "zoom-in" | "zoom-out",
+  ) {
     if (!files?.length) {
       return;
     }
 
     try {
-      const prepared = await Promise.all(Array.from(files).map((file) => preparePhoto(file)));
+      const prepared = await Promise.all(Array.from(files).map((file) => preparePhoto(file, captureType)));
       appendPhotos(sourceKey, itemId, prepared);
       setActionError("");
     } catch (photoError) {
@@ -138,12 +145,6 @@ export default function Home() {
 
     if (!isMetaValid(meta)) {
       setActionError("請先填寫 Ward、Inspector 同 Inspection Date，之後先可以提交");
-      return;
-    }
-
-    const failValidationError = getFailValidationError(sheets, results);
-    if (failValidationError) {
-      setActionError(failValidationError);
       return;
     }
 
@@ -167,6 +168,16 @@ export default function Home() {
       setActionError(submitError instanceof Error ? submitError.message : "提交失敗");
     } finally {
       setIsSubmitting(false);
+    }
+  }
+
+  async function handleResetDraft() {
+    try {
+      await clearDraftFromStorage();
+      clearDraftData();
+      setActionError("");
+    } catch (clearError) {
+      setActionError(clearError instanceof Error ? clearError.message : "清除草稿失敗");
     }
   }
 
@@ -196,6 +207,15 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-[#eef2ec] px-4 py-6 text-slate-900 sm:px-6 lg:px-8">
       <div className="mx-auto flex max-w-[1680px] flex-col gap-6">
+        <AppHeader
+          templateName={templateName}
+          saveMessage={saveMessage}
+          onSave={handleSave}
+          onSubmit={handleSubmit}
+          isSaving={isSaving}
+          isSubmitting={isSubmitting}
+        />
+
         {actionError ? (
           <div className="rounded-[20px] border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700">
             {actionError}
@@ -203,8 +223,14 @@ export default function Home() {
         ) : null}
 
         <div className="grid gap-6 xl:grid-cols-[370px_minmax(0,1fr)]">
-          <div className="space-y-6 xl:sticky xl:top-6 xl:max-h-[calc(100vh-3rem)] xl:overflow-y-auto xl:pr-1 xl:self-start">
+          <div className="space-y-6 xl:sticky xl:top-6 xl:self-start">
             <MetaFormCard meta={meta} onChange={updateMeta} />
+            <SectionNav
+              sheets={sheets}
+              activeSheetName={activeSheet?.name ?? ""}
+              summary={summary}
+              onSelect={setActiveSheet}
+            />
             <SummaryPanel summary={summary} />
           </div>
 
@@ -215,6 +241,10 @@ export default function Home() {
                   <div>
                     <p className="text-xs uppercase tracking-[0.24em] text-slate-400">Active Zone</p>
                     <h2 className="font-display text-3xl text-slate-950 sm:text-4xl">{activeSheet?.label}</h2>
+                    <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
+                      每個 item 會優先顯示檢查 instruction，現場只需要揀 `PASS`、`FAIL` 或 `N/A`，
+                      再補最少量 notes 同 photo evidence。
+                    </p>
                   </div>
 
                   <div className="grid gap-3 sm:grid-cols-3 xl:min-w-[360px]">
@@ -234,34 +264,40 @@ export default function Home() {
                 </div>
               </div>
 
-              <div className="px-5 py-4 sm:px-6">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-400">
-                  Check Zone
-                </p>
-                <div className="mt-3 flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                  {sheets.map((sheet) => {
-                    const active = sheet.name === activeSheet?.name;
-                    return (
-                      <button
-                        key={sheet.name}
-                        type="button"
-                        onClick={() => setActiveSheet(sheet.name)}
-                        className={`shrink-0 rounded-full px-4 py-2 text-sm font-medium transition ${
-                          active
-                            ? "bg-slate-950 text-white"
-                            : "border border-slate-200 bg-slate-50 text-slate-700 hover:border-slate-300 hover:bg-white"
-                        }`}
-                      >
-                        {sheet.label}
-                      </button>
-                    );
-                  })}
+              <div className="flex flex-col gap-4 px-5 py-4 sm:px-6 xl:flex-row xl:items-center xl:justify-between">
+                <div className="flex flex-wrap gap-2">
+                  {FILTER_OPTIONS.map((option) => (
+                    <button
+                      key={option}
+                      type="button"
+                      onClick={() => setStatusFilter(option)}
+                      className={`rounded-full px-4 py-2 text-sm transition ${
+                        statusFilter === option
+                          ? "bg-slate-950 text-white"
+                          : "border border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300 hover:bg-white"
+                      }`}
+                    >
+                      <span className="inline-flex items-center gap-2">
+                        <Filter className="h-3.5 w-3.5" />
+                        {option}
+                      </span>
+                    </button>
+                  ))}
                 </div>
+
+                <button
+                  type="button"
+                  onClick={handleResetDraft}
+                  className="inline-flex items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm text-slate-600 transition hover:border-slate-300 hover:bg-slate-50"
+                >
+                  <RefreshCcw className="h-3.5 w-3.5" />
+                  Clear Draft
+                </button>
               </div>
             </section>
 
             <section className="space-y-5">
-              {(activeSheet?.items ?? []).map((item) => (
+              {filteredItems.map((item) => (
                 <ItemCard
                   key={item.sourceKey}
                   item={item}
@@ -273,37 +309,11 @@ export default function Home() {
                 />
               ))}
 
-              {(activeSheet?.items ?? []).length === 0 ? (
+              {filteredItems.length === 0 ? (
                 <div className="rounded-[24px] border border-dashed border-slate-300 bg-white/80 p-10 text-center text-slate-500">
                   呢個篩選條件之下未有 item。
                 </div>
               ) : null}
-            </section>
-
-            <section className="pt-3">
-              <div className="flex flex-col items-end gap-3">
-                <div className="text-xs text-slate-500">{saveMessage || "未儲存最新更改"}</div>
-                <div className="flex flex-wrap justify-end gap-3">
-                  <button
-                    type="button"
-                    onClick={handleSave}
-                    disabled={isSaving}
-                    className="inline-flex items-center justify-center gap-2 rounded-full border border-slate-300 bg-white px-5 py-3 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    <Save className="h-4 w-4" />
-                    {isSaving ? "儲存中..." : "Save"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleSubmit}
-                    disabled={isSubmitting}
-                    className="inline-flex items-center justify-center gap-2 rounded-full bg-slate-950 px-6 py-3 text-sm font-medium text-white shadow-[0_20px_40px_rgba(15,23,42,0.16)] transition hover:bg-teal-900 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    <Send className={`h-4 w-4 ${isSubmitting ? "animate-pulse" : ""}`} />
-                    {isSubmitting ? "提交中..." : "Submit"}
-                  </button>
-                </div>
-              </div>
             </section>
           </main>
         </div>

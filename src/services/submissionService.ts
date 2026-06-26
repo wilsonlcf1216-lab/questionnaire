@@ -17,7 +17,6 @@ import {
   buildSubmissionRecord,
   createSubmissionItemSourceKey,
 } from "@/utils/submissionMapper";
-import { sanitizeStorageSegment } from "@/utils/file";
 
 function dataUrlToBlob(dataUrl: string): Blob {
   const [header, base64] = dataUrl.split(",");
@@ -35,7 +34,6 @@ function dataUrlToBlob(dataUrl: string): Blob {
 
 async function uploadSubmissionPhotos(params: {
   submissionId: string;
-  sheets: ChecklistSheet[];
   results: Record<string, InspectionItemResult>;
 }) {
   if (!supabase) {
@@ -43,19 +41,6 @@ async function uploadSubmissionPhotos(params: {
   }
 
   const photoUrlByItem: Record<string, Array<{ fileName: string; storagePath: string; photoUrl: string }>> = {};
-  const itemLookup = params.sheets.reduce<Record<string, { itemId: string; sheetName: string; category: string }>>(
-    (accumulator, sheet) => {
-      for (const item of sheet.items) {
-        accumulator[item.sourceKey] = {
-          itemId: item.id,
-          sheetName: sheet.name,
-          category: item.category,
-        };
-      }
-      return accumulator;
-    },
-    {},
-  );
 
   for (const [sourceKey, result] of Object.entries(params.results)) {
     if (!result.photos.length) {
@@ -63,15 +48,11 @@ async function uploadSubmissionPhotos(params: {
     }
 
     photoUrlByItem[sourceKey] = [];
-    const itemMeta = itemLookup[sourceKey];
-    const safeSheetName = sanitizeStorageSegment(itemMeta?.sheetName ?? "sheet", "sheet");
-    const safeItemId = sanitizeStorageSegment(itemMeta?.itemId ?? result.itemId, "item");
-    const safeCategory = sanitizeStorageSegment(itemMeta?.category ?? "uncategorized", "uncategorized");
 
     for (const photo of result.photos) {
       const extension = photo.mimeType === "image/png" ? "png" : "jpg";
-      const fileName = `${safeItemId}__${safeCategory}__${photo.id}.${extension}`;
-      const storagePath = `${params.submissionId}/${safeSheetName}/${safeItemId}/${safeCategory}/${fileName}`;
+      const fileName = `${photo.id}.${extension}`;
+      const storagePath = `${params.submissionId}/${result.itemId}/${fileName}`;
       const blob = dataUrlToBlob(photo.dataUrl);
 
       const uploadResult = await supabase.storage
@@ -119,13 +100,7 @@ export async function submitInspection(params: {
     .single();
 
   if (submissionResponse.error || !submissionResponse.data) {
-    const error = submissionResponse.error;
-    const detail = error
-      ? [error.message, error.details, error.hint, error.code].filter(Boolean).join(" / ")
-      : "";
-    throw new Error(
-      `提交 submission 失敗：${detail || "請檢查 Supabase table / RLS 設定，並確認已在 SQL Editor 執行 schema.sql"}`,
-    );
+    throw new Error("提交 submission 失敗，請檢查 Supabase table 設定");
   }
 
   const submissionId = submissionResponse.data.id as string;
@@ -136,9 +111,7 @@ export async function submitInspection(params: {
     .select("id, source_key");
 
   if (itemResponse.error || !itemResponse.data) {
-    const error = itemResponse.error;
-    const detail = error ? [error.message, error.details, error.hint, error.code].filter(Boolean).join(" / ") : "";
-    throw new Error(`寫入 item 資料失敗：${detail || "請檢查 submission_items table / RLS"}`);
+    throw new Error("寫入 item 資料失敗");
   }
 
   const itemIdMap = itemResponse.data.reduce<Record<string, string>>((accumulator, row) => {
@@ -148,7 +121,6 @@ export async function submitInspection(params: {
 
   const photoUrlByItem = await uploadSubmissionPhotos({
     submissionId,
-    sheets: params.sheets,
     results: params.results,
   });
 
@@ -162,9 +134,7 @@ export async function submitInspection(params: {
   if (photoRows.length > 0) {
     const photoResponse = await supabase.from("submission_item_photos").insert(photoRows);
     if (photoResponse.error) {
-      const error = photoResponse.error;
-      const detail = [error.message, error.details, error.hint, error.code].filter(Boolean).join(" / ");
-      throw new Error(`相片資料索引寫入失敗：${detail || "請檢查 submission_item_photos table / RLS"}`);
+      throw new Error("相片資料索引寫入失敗");
     }
   }
 

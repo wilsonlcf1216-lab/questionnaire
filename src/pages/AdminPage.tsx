@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Download, LoaderCircle, LogOut, RefreshCw, Shield, Table2 } from "lucide-react";
+import { Download, LogOut, RefreshCw, Shield, Table2 } from "lucide-react";
 
 import {
   canAccessAdmin,
@@ -10,7 +10,7 @@ import {
   signOutAdmin,
 } from "@/services/adminService";
 import type { SubmissionDetail, SubmissionRecord } from "@/types/checklist";
-import { exportSubmissionDetailCsv, exportSubmissionListCsv, exportSubmissionPhotosZip } from "@/utils/adminExport";
+import { exportSubmissionDetailCsv, exportSubmissionListCsv } from "@/utils/adminExport";
 import { isSupabaseConfigured } from "@/utils/env";
 
 export default function AdminPage() {
@@ -22,8 +22,6 @@ export default function AdminPage() {
   const [selectedId, setSelectedId] = useState("");
   const [detail, setDetail] = useState<SubmissionDetail | null>(null);
   const [search, setSearch] = useState("");
-  const [isExportingZip, setIsExportingZip] = useState(false);
-  const [isExportingFailZip, setIsExportingFailZip] = useState(false);
 
   async function refreshSubmissions() {
     setLoading(true);
@@ -69,44 +67,6 @@ export default function AdminPage() {
   async function handleSignOut() {
     await signOutAdmin();
     navigate("/admin/login");
-  }
-
-  async function handleExportZip() {
-    if (filteredSubmissions.length === 0) {
-      return;
-    }
-
-    try {
-      setIsExportingZip(true);
-      const details = (
-        await Promise.all(filteredSubmissions.map((submission) => fetchSubmissionDetail(submission.id)))
-      ).filter((submissionDetail): submissionDetail is SubmissionDetail => Boolean(submissionDetail));
-      await exportSubmissionPhotosZip(details);
-      setError("");
-    } catch (exportError) {
-      setError(exportError instanceof Error ? exportError.message : "未能下載 submission 相片 ZIP");
-    } finally {
-      setIsExportingZip(false);
-    }
-  }
-
-  async function handleExportFailZip() {
-    if (filteredSubmissions.length === 0) {
-      return;
-    }
-
-    try {
-      setIsExportingFailZip(true);
-      const details = (
-        await Promise.all(filteredSubmissions.map((submission) => fetchSubmissionDetail(submission.id)))
-      ).filter((submissionDetail): submissionDetail is SubmissionDetail => Boolean(submissionDetail));
-      await exportSubmissionPhotosZip(details, { failOnly: true });
-      setError("");
-    } catch (exportError) {
-      setError(exportError instanceof Error ? exportError.message : "未能下載 Fail item 相片 ZIP");
-    } finally {
-      setIsExportingFailZip(false);
-    }
   }
 
   const filteredSubmissions = useMemo(
@@ -162,24 +122,6 @@ export default function AdminPage() {
               >
                 <Download className="h-4 w-4" />
                 Export 全部 CSV
-              </button>
-              <button
-                type="button"
-                onClick={handleExportZip}
-                disabled={isExportingZip || filteredSubmissions.length === 0}
-                className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-5 py-3 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {isExportingZip ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-                {isExportingZip ? "整理全部相片中..." : "Download 全部 submission 相"}
-              </button>
-              <button
-                type="button"
-                onClick={handleExportFailZip}
-                disabled={isExportingFailZip || filteredSubmissions.length === 0}
-                className="inline-flex items-center gap-2 rounded-full border border-rose-300 bg-rose-50 px-5 py-3 text-sm font-medium text-rose-700 transition hover:border-rose-400 hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {isExportingFailZip ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-                {isExportingFailZip ? "整理 Fail 相片中..." : "只下載 Fail item 相片"}
               </button>
               {isSupabaseConfigured() ? (
                 <button
@@ -308,8 +250,7 @@ export default function AdminPage() {
                       </div>
 
                       <div className="mt-4 rounded-2xl bg-white px-4 py-3 text-sm text-slate-600">
-                        <p className="font-medium text-slate-900">Category: {item.category || "Uncategorized"}</p>
-                        <p className="mt-2">{item.notes || "No notes"}</p>
+                        {item.notes || "No notes"}
                       </div>
 
                       {item.photos.length > 0 ? (
@@ -323,10 +264,7 @@ export default function AdminPage() {
                               className="overflow-hidden rounded-[18px] border border-slate-200 bg-white transition hover:shadow-md"
                             >
                               <img src={photo.photoUrl} alt={photo.fileName} className="h-40 w-full object-cover" />
-                              <div className="space-y-1 p-3 text-xs text-slate-500">
-                                <p>{photo.fileName}</p>
-                                <p className="truncate text-[11px] text-slate-400">{photo.storagePath}</p>
-                              </div>
+                              <div className="p-3 text-xs text-slate-500">{photo.fileName}</div>
                             </a>
                           ))}
                         </div>

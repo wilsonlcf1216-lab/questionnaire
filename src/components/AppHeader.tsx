@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Send, Save } from "lucide-react";
+import { Send, Save, ShieldCheck } from "lucide-react";
 
 interface AppHeaderProps {
   templateName: string;
@@ -24,9 +24,13 @@ export function AppHeader({
       <div className="absolute -left-14 top-0 h-40 w-40 rounded-full bg-teal-100/60 blur-3xl" />
       <div className="relative flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
         <div className="max-w-4xl space-y-5">
+          <div className="inline-flex items-center gap-2 rounded-full border border-teal-900/10 bg-slate-950 px-3 py-1 text-[11px] uppercase tracking-[0.28em] text-teal-100">
+            <ShieldCheck className="h-3.5 w-3.5" />
+            Hospital Ward Pre-Handover
+          </div>
           <div className="space-y-4">
-            <h1 className="font-display text-4xl leading-tight text-slate-950 sm:text-5xl xl:text-6xl">
-              病房交接檢查
+            <h1 className="max-w-4xl font-display text-4xl leading-tight text-slate-950 sm:text-5xl xl:text-6xl">
+              現場 checklist 可以即填、即影、即匯出 Excel
             </h1>
             <div className="grid max-w-3xl gap-3 sm:grid-cols-3">
               <div className="rounded-[22px] border border-white/70 bg-white/80 px-4 py-3">

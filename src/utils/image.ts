@@ -45,13 +45,14 @@ async function resizeDataUrl(dataUrl: string, mimeType: string) {
   return { dataUrl: output, width, height };
 }
 
-export async function preparePhoto(file: File): Promise<InspectionPhoto> {
+export async function preparePhoto(file: File, captureType?: InspectionPhoto["captureType"]): Promise<InspectionPhoto> {
   const original = await readAsDataUrl(file);
   const resized = await resizeDataUrl(original, file.type);
 
   return {
     id: generateId(),
     name: file.name,
+    captureType,
     mimeType: resized.dataUrl.startsWith("data:image/png") ? "image/png" : "image/jpeg",
     dataUrl: resized.dataUrl,
     width: resized.width,
