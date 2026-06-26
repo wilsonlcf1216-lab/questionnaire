@@ -31,11 +31,12 @@ function getStatusTone(status: InspectionItemResult["status"]) {
 }
 
 function parseNoteLines(notes?: string) {
-  if (!notes?.trim()) {
+  if (notes === undefined) {
     return [""];
   }
 
-  return notes.split("\n");
+  const lines = notes.split("\n");
+  return lines.length > 0 ? lines : [""];
 }
 
 export function ItemCard({
