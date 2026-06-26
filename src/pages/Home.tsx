@@ -118,13 +118,18 @@ export default function Home() {
     }
   }
 
-  async function handleAddPhotos(sourceKey: string, itemId: string, files: FileList | null) {
+  async function handleAddPhotos(
+    sourceKey: string,
+    itemId: string,
+    files: FileList | null,
+    captureType?: "zoom-in" | "zoom-out",
+  ) {
     if (!files?.length) {
       return;
     }
 
     try {
-      const prepared = await Promise.all(Array.from(files).map((file) => preparePhoto(file)));
+      const prepared = await Promise.all(Array.from(files).map((file) => preparePhoto(file, captureType)));
       appendPhotos(sourceKey, itemId, prepared);
       setActionError("");
     } catch (photoError) {

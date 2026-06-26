@@ -25,6 +25,7 @@ export interface ChecklistSheet {
 export interface InspectionPhoto {
   id: string;
   name: string;
+  captureType?: "zoom-in" | "zoom-out";
   mimeType: string;
   dataUrl: string;
   width: number;
